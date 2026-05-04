@@ -2,7 +2,7 @@ import pandas as pd
 import ast
 import chromadb
 
-DATA_DIR = "/content/drive/MyDrive/skincare_project/data"
+DATA_DIR = "data"
 
 
 def parse_ingredients_list(ingred_str):
