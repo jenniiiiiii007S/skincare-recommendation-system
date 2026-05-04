@@ -2,12 +2,12 @@ import json
 import re
 from agents.skin_profile import skin_profile_agent
 from agents.retrieval import search_products
-from agents.conflict_checker import conflict_lookup, beneficial_lookup, rag_conflict_check
+from agents.conflict_checker import conflict_lookup, beneficial_lookup, rag_conflict_check, normalize_ingredient
 from agents.routine_builder import routine_builder_agent
 
-
+# Define rouutine preference function
 def detect_routine_preference(client, user_input):
-    """Use Gemini to detect if user wants AM, PM, or both routines."""
+    """Use Gemini to detect if user wants AM, PM, or both."""
 
     prompt = f"""A user is asking for skincare advice. Determine if they want a morning routine, evening routine, or both.
 
@@ -42,19 +42,21 @@ def run_conflict_check(client, ingredient_collection, products, profile):
             all_ingredients.add(ing.strip())
     all_ingredients_list = list(all_ingredients)
 
-    # Step 1: hardcoded rules (fast)
+    # Check known conflicts using predefined rules
     for ing in all_ingredients_list:
-        if ing in conflict_lookup:
-            for conflict in conflict_lookup[ing]:
+        norm = normalize_ingredient(ing)
+        if norm in conflict_lookup:
+            for conflict in conflict_lookup[norm]:
                 partner = conflict["conflicts_with"]
-                if partner in all_ingredients:
+                partner_matches = any(normalize_ingredient(i) == partner for i in all_ingredients_list)
+                if partner_matches:
                     pair = tuple(sorted([ing, partner]))
                     entry = {"ingredient_a": pair[0], "ingredient_b": pair[1],
                              "reason": conflict["reason"], "source": "rules"}
                     if entry not in conflicts_found:
                         conflicts_found.append(entry)
 
-    # Step 2: RAG fallback for ingredients not in hardcoded rules
+    # Use RAG to check additional conflicts & ingredients not in hardcoded rules
     rag_conflicts = rag_conflict_check(client, ingredient_collection, all_ingredients_list)
     for c in rag_conflicts:
         pair = tuple(sorted([c["ingredient_a"], c["ingredient_b"]]))
@@ -84,9 +86,11 @@ def run_conflict_check(client, ingredient_collection, products, profile):
 
     return {"conflicts": conflicts_found, "allergy_flags": allergy_flags, "beneficial": beneficial_found}
 
-
+# -------------------------
+# FULL PIPELINE (Config 2)
+# -------------------------
 def full_pipeline(client, product_collection, ingredient_collection, user_input, products_per_type=3):
-    """Run the full skincare recommendation pipeline.
+    """Run the full multi-agent skincare recommendation pipeline.
 
     Agent 1 (Skin Profile) -> Agent 2 (Product Retrieval) -> Agent 3 (Conflict Check) -> Agent 4 (Routine Builder)
 
@@ -98,7 +102,7 @@ def full_pipeline(client, product_collection, ingredient_collection, user_input,
         products_per_type: Number of products to retrieve per category (default 3).
 
     Returns:
-        dict with keys: profile, retrieved_products, conflict_report, routine, raw_input, routine_preference.
+        Dict with keys: profile, retrieved_products, conflict_report, routine, raw_input, routine_preference.
     """
 
     # Step 0: Detect routine preference before any agent runs
@@ -125,7 +129,7 @@ def full_pipeline(client, product_collection, ingredient_collection, user_input,
     all_products = []
     for ptype in product_types:
         query = f"{skin_type} skin {concerns} {ptype.lower()}"
-        results = search_products(product_collection, query, n_results=products_per_type, product_type=ptype)
+        results = search_products(product_collection, query, n_results=products_per_type, product_type=ptype, skin_type=skin_type)
         for i in range(len(results["ids"][0])):
             meta = results["metadatas"][0][i]
             all_products.append({
@@ -142,7 +146,7 @@ def full_pipeline(client, product_collection, ingredient_collection, user_input,
     # Agent 3: Check for conflicts and allergies
     conflict_report = run_conflict_check(client, ingredient_collection, all_products, profile)
 
-    # Agent 4: Build the routine (passes routine_pref so Gemini structures AM/PM correctly)
+    # Agent 4: Build routine (passes routine_pref so Gemini structures AM/PM correctly)
     routine = routine_builder_agent(client, profile, all_products, conflict_report, routine_pref=routine_pref)
 
     return {
@@ -153,3 +157,22 @@ def full_pipeline(client, product_collection, ingredient_collection, user_input,
         "routine": routine,
         "routine_preference": routine_pref
     }
+
+# -------------------------
+# BASELINE (Config 2)
+# -------------------------
+def baseline_gemini(client, user_input):
+    """
+    Baseline: raw Gemini response with no retrieval, no structured pipeline.
+    Used for comparison in evaluation.
+    """
+    prompt = f"Give a skincare routine for this user: {user_input}"
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        return response.text
+    except Exception as e:
+        return f"Error: {e}"
