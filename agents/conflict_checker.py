@@ -3,8 +3,8 @@ import re
 
 # Ingredient interaction rules grounded in the Skincare Knowledge Graph dataset
 # Rules are split into two categories:
-#   - conflict_rules_raw: ingredient combinations to AVOID (adverse effects)
-#   - beneficial_pairs: ingredient combinations that WORK WELL together
+#   (1) conflict_rules_raw: ingredient combinations to AVOID (adverse effects)
+#   (2) beneficial_pairs: ingredient combinations that WORK WELL together
 
 conflict_rules_raw = [
     {"ingredient_a": "retinol", "ingredient_b": "vitamin c", "reason": "Cancel out effects."},
