@@ -52,7 +52,7 @@ The following datasets are required and should be placed in your Google Drive at
 | Skincare Products Clean | [Kaggle](https://www.kaggle.com/datasets/eward96/skincare-products-clean-dataset) |
 | Cosmetics (Sephora) | [Kaggle](https://www.kaggle.com/datasets/kingabzpro/cosmetics-datasets) |
 | INCI Ingredient List | [Kaggle](https://www.kaggle.com/datasets/amaboh/skin-care-product-ingredients-inci-list) |
-| Skin Disease Classification | [Kaggle]([https://www.kaggle.com/datasets/trainingdatapro/skin-defects-acne-redness-and-bags](https://www.kaggle.com/datasets/trainingdatapro/skin-defects-acne-redness-and-bags-under-the-eyes)) |
+| Skin Disease Classification | [Kaggle](https://www.kaggle.com/datasets/trainingdatapro/skin-defects-acne-redness-and-bags-under-the-eyes) |
 
 Image datasets are not included in this repository due to size constraints.
 
