@@ -38,10 +38,18 @@ checks for ingredient conflicts and allergens, and builds structured AM/PM routi
 └── README.md
 ```
 ## Setup
-1. Clone this repo and open `notebooks/build_modules.ipynb` in Google Colab
-2. Mount your Google Drive and run all cells to write the `.py` files
+1. Open `notebooks/demo.ipynb` in Google Colab
+2. At the top of the notebook, the repo will be cloned automatically using GitHub
 3. Add your Gemini API key to Colab Secrets as `GEMINI_API_KEY`
-4. Open `notebooks/demo.ipynb` and run all cells from top to bottom
+4. Run all cells from top to bottom to:
+   - install dependencies
+   - load data and build the vector database
+   - run pipeline and evaluation
+  
+Note:
+- The project now uses GitHub as the source of truth for all `.py` files.
+- You do not need to run `build_modules.ipynb` anymore.
+- To make code changes, edit the `.py` files directly in GitHub and re-run `demo.ipynb` (which will pull the latest version).
 
 ## Datasets
 The following datasets are required and should be placed in your Google Drive at  
