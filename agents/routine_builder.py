@@ -71,12 +71,13 @@ BENEFICIAL COMBINATIONS:
 {beneficial_str}
 
 INSTRUCTIONS:
-1. BUDGET IS THE TOP PRIORITY. The user cannot afford products outside their budget,
-   so a routine they can't pay for is useless. NEVER select a product whose price
-   exceeds the user's per-category limit (if set), overall limit (if set), or tier limit.
-   If a category has no in-budget option, OMIT that step entirely and note it in warnings —
-   do NOT recommend an over-budget product as a fallback. The user can decide whether to
-   add that step later when they have more to spend.
+1. RESPECT THE USER'S BUDGET. Prefer products within the user's per-category limit
+   (if set), overall limit (if set), or tier limit. The BUDGET block above may list
+   "fallback" products — these are categories where no cheaper option existed in
+   our database, so the cheapest available was used. INCLUDE these fallbacks in the
+   routine, but mention them clearly in the warnings array so the user knows the
+   actual price exceeds their stated budget and that no lower-priced alternative
+   exists.
 2. Select appropriate products from the list above for a morning and evening routine,
    choosing the best skin-type and concern match WITHIN budget.
 3. DO NOT include any products flagged for allergy conflicts.
