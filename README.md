@@ -33,7 +33,7 @@ checks for ingredient conflicts and allergens, and builds structured AM/PM routi
 │   ├── skincare_products_clean.csv
 │   └── README.md             # Dataset download instructions
 ├── notebooks/
-│   ├── build_modules.ipynb   # Writes all .py files to Drive
+│   ├── build_modules.ipynb   # Legacy notebook, no longer needed. Edit .py files directly on GitHub.
 │   └── demo.ipynb            # Runs the pipeline with tests and evaluation
 └── README.md
 ```
