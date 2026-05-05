@@ -74,5 +74,6 @@ reflects a deliberate precision/recall tradeoff to eliminate false positives.
 
 ## Requirements
 - Google Colab (recommended)
+- GitHub (to access project repository)
 - Gemini API key with billing enabled (Paid 1 tier)
 - `google-genai`, `chromadb`, `pandas` (installed via setup cell in demo.ipynb)
