@@ -1,13 +1,15 @@
 import json
 import re
+from collections import defaultdict
 from agents.skin_profile import skin_profile_agent
 from agents.retrieval import search_products
 from agents.conflict_checker import conflict_lookup, beneficial_lookup, rag_conflict_check, normalize_ingredient
+from agents.budget_agent import budget_agent, filter_products_by_budget
 from agents.routine_builder import routine_builder_agent
 
-# Define rouutine preference function
+
 def detect_routine_preference(client, user_input):
-    """Use Gemini to detect if user wants AM, PM, or both."""
+    """Use Gemini to detect if user wants AM, PM, or both routines."""
 
     prompt = f"""A user is asking for skincare advice. Determine if they want a morning routine, evening routine, or both.
 
@@ -42,21 +44,21 @@ def run_conflict_check(client, ingredient_collection, products, profile):
             all_ingredients.add(ing.strip())
     all_ingredients_list = list(all_ingredients)
 
-    # Check known conflicts using predefined rules
+    # Step 1: hardcoded rules (fast)
     for ing in all_ingredients_list:
         norm = normalize_ingredient(ing)
         if norm in conflict_lookup:
-            for conflict in conflict_lookup[norm]:
+              for conflict in conflict_lookup[norm]:
                 partner = conflict["conflicts_with"]
                 partner_matches = any(normalize_ingredient(i) == partner for i in all_ingredients_list)
                 if partner_matches:
-                    pair = tuple(sorted([ing, partner]))
+                    pair = tuple(sorted([norm, partner]))
                     entry = {"ingredient_a": pair[0], "ingredient_b": pair[1],
-                             "reason": conflict["reason"], "source": "rules"}
+                            "reason": conflict["reason"], "source": "rules"}
                     if entry not in conflicts_found:
                         conflicts_found.append(entry)
 
-    # Use RAG to check additional conflicts & ingredients not in hardcoded rules
+    # Step 2: RAG fallback for ingredients not in hardcoded rules
     rag_conflicts = rag_conflict_check(client, ingredient_collection, all_ingredients_list)
     for c in rag_conflicts:
         pair = tuple(sorted([c["ingredient_a"], c["ingredient_b"]]))
@@ -78,21 +80,41 @@ def run_conflict_check(client, ingredient_collection, products, profile):
                         beneficial_found.append(entry)
 
     # Allergy check
+    ALLERGEN_SYNONYMS = {
+    "parabens": ["methylparaben", "ethylparaben", "propylparaben", "butylparaben", "isobutylparaben", "isopropylparaben"],
+    "sulfates": ["sodium lauryl sulfate", "sodium laureth sulfate", "ammonium lauryl sulfate", "ammonium laureth sulfate", "sls", "sles"],
+    "fragrance": ["fragrance", "parfum", "perfume", "aroma", "limonene", "linalool", "citronellol", "geraniol", "eugenol"],
+    "alcohol": ["alcohol denat", "alcohol denat.", "denatured alcohol", "ethanol", "sd alcohol", "isopropyl alcohol"],
+    "silicones": ["dimethicone", "cyclopentasiloxane", "cyclohexasiloxane", "phenyl trimethicone", "trimethylsiloxysilicate"],
+    "essential oils": ["tea tree oil", "lavender oil", "peppermint oil", "eucalyptus oil", "rosemary oil"],
+    "formaldehyde": ["formaldehyde", "dmdm hydantoin", "imidazolidinyl urea", "diazolidinyl urea", "quaternium-15", "bronopol"],
+}
+
+    def expand_allergen(allergen):
+        """Expand a user-reported allergen term into all its chemical name variants."""
+        allergen_lower = allergen.lower().strip()
+        for key, synonyms in ALLERGEN_SYNONYMS.items():
+            if allergen_lower == key or allergen_lower in synonyms:
+                return synonyms + [key]
+        return [allergen_lower]
+
     user_allergies = [a.lower() for a in (profile.get("allergies") or [])]
     for p in products:
+        ingredients_lower = p["ingredients"].lower()
         for allergen in user_allergies:
-            if allergen in p["ingredients"].lower():
-                allergy_flags.append({"product": p["name"], "allergen": allergen})
-
+            expanded = expand_allergen(allergen)
+            for term in expanded:
+                if term in ingredients_lower:
+                    allergy_flags.append({"product": p["name"], "allergen": allergen})
+                    break  # avoid duplicate flags for the same product/allergen pair
     return {"conflicts": conflicts_found, "allergy_flags": allergy_flags, "beneficial": beneficial_found}
 
-# -------------------------
-# FULL PIPELINE (Config 2)
-# -------------------------
-def full_pipeline(client, product_collection, ingredient_collection, user_input, products_per_type=3):
-    """Run the full multi-agent skincare recommendation pipeline.
 
-    Agent 1 (Skin Profile) -> Agent 2 (Product Retrieval) -> Agent 3 (Conflict Check) -> Agent 4 (Routine Builder)
+def full_pipeline(client, product_collection, ingredient_collection, user_input, products_per_type=3, image_path=None):
+    """Run the full skincare recommendation pipeline.
+
+    Agent 1 (Skin Profile) -> Agent 2 (Product Retrieval) -> Agent 3 (Conflict Check) ->
+    Agent 4 (Budget) -> Agent 5 (Routine Builder)
 
     Args:
         client: Google GenAI client instance.
@@ -102,15 +124,26 @@ def full_pipeline(client, product_collection, ingredient_collection, user_input,
         products_per_type: Number of products to retrieve per category (default 3).
 
     Returns:
-        Dict with keys: profile, retrieved_products, conflict_report, routine, raw_input, routine_preference.
+        dict with keys: profile, retrieved_products, conflict_report, routine,
+                        raw_input, routine_preference, budget_profile.
     """
 
-    # Step 0: Detect routine preference before any agent runs
+    # Step 0: Detect routine preference and budget profile before any agent runs
     routine_pref = detect_routine_preference(client, user_input)
+    budget_profile = budget_agent(client, user_input)
+
     print(f"Routine preference detected: {routine_pref}")
+    print(f"Budget tier detected: {budget_profile['tier']}")
+    if budget_profile["overall_limit"] is not None:
+        print(f"Overall limit: ${budget_profile['overall_limit']}")
+    per_cat = {k: v for k, v in budget_profile["per_category"].items() if v is not None}
+    if per_cat:
+        print(f"Per-category limits: {per_cat}")
+    if budget_profile["tier"] == "any" and budget_profile["overall_limit"] is None and not per_cat:
+        print("No budget constraint mentioned - returning all price ranges.")
 
     # Agent 1: Parse user input into structured skin profile
-    profile = skin_profile_agent(client, user_input)
+    profile = skin_profile_agent(client, user_input, image_path=image_path)
 
     # Agent 2: Retrieve candidate products based on routine preference
     am_types = ["Cleanser", "Serum", "Moisturizer", "Sun protect"]
@@ -129,7 +162,9 @@ def full_pipeline(client, product_collection, ingredient_collection, user_input,
     all_products = []
     for ptype in product_types:
         query = f"{skin_type} skin {concerns} {ptype.lower()}"
-        results = search_products(product_collection, query, n_results=products_per_type, product_type=ptype, skin_type=skin_type)
+        # Fetch a wider net when budget is constrained so filtering still leaves enough candidates
+        fetch_n = products_per_type * 3 if budget_profile["tier"] != "any" else products_per_type
+        results = search_products(product_collection, query, n_results=fetch_n, product_type=ptype, skin_type=skin_type)
         for i in range(len(results["ids"][0])):
             meta = results["metadatas"][0][i]
             all_products.append({
@@ -143,11 +178,31 @@ def full_pipeline(client, product_collection, ingredient_collection, user_input,
                                "PM" if ptype in ["Retinol", "Face oil"] else "both"
             })
 
+    # Agent 4: Strict budget filter (no over-budget fallback)
+    all_products = filter_products_by_budget(all_products, budget_profile)
+
+    # Surface omitted categories so routine_builder can warn the user
+    omitted_categories = getattr(filter_products_by_budget, "last_omitted", [])
+    if omitted_categories:
+        budget_profile["omitted_categories"] = omitted_categories
+
+    # Trim back to products_per_type per type so the prompt stays manageable
+    type_counts = defaultdict(int)
+    trimmed = []
+    for p in all_products:
+        if type_counts[p["product_type"]] < products_per_type:
+            trimmed.append(p)
+            type_counts[p["product_type"]] += 1
+    all_products = trimmed
+
     # Agent 3: Check for conflicts and allergies
     conflict_report = run_conflict_check(client, ingredient_collection, all_products, profile)
 
-    # Agent 4: Build routine (passes routine_pref so Gemini structures AM/PM correctly)
-    routine = routine_builder_agent(client, profile, all_products, conflict_report, routine_pref=routine_pref)
+    # Agent 5: Build the routine (passes routine_pref and budget_profile so Gemini respects both)
+    routine = routine_builder_agent(
+        client, profile, all_products, conflict_report,
+        routine_pref=routine_pref, budget_profile=budget_profile
+    )
 
     return {
         "raw_input": user_input,
@@ -155,24 +210,6 @@ def full_pipeline(client, product_collection, ingredient_collection, user_input,
         "retrieved_products": all_products,
         "conflict_report": conflict_report,
         "routine": routine,
-        "routine_preference": routine_pref
+        "routine_preference": routine_pref,
+        "budget_profile": budget_profile,
     }
-
-# -------------------------
-# BASELINE (Config 2)
-# -------------------------
-def baseline_gemini(client, user_input):
-    """
-    Baseline: raw Gemini response with no retrieval, no structured pipeline.
-    Used for comparison in evaluation.
-    """
-    prompt = f"Give a skincare routine for this user: {user_input}"
-
-    try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
-        return response.text
-    except Exception as e:
-        return f"Error: {e}"
