@@ -5,9 +5,7 @@ Trinity Chan · Jennifer Ran · Savanna Thomas
 
 ## Overview
 A domain-specialized multi-agent pipeline that generates personalized, conflict-free 
-skincare routine recommendations. The system accepts both text descriptions and facial 
-images as input, retrieves real products from a vector database of 2,418 products, 
-checks for ingredient conflicts and allergens, and builds structured AM/PM routines.
+skincare routine recommendations. The system accepts both text descriptions and optional facial images as input, retrieves real products from a vector database of 2,418 products, checks for ingredient conflicts and allergens, and builds structured AM/PM routines.
 
 ## Pipeline
 1. **Skin Profile Agent** — Parses user text and optional facial image into a structured profile using Gemini 2.5 Flash vision
@@ -20,21 +18,21 @@ checks for ingredient conflicts and allergens, and builds structured AM/PM routi
 ```
 ├── agents/
 │   ├── __init__.py
-│   ├── skin_profile.py       # Agent 1: multimodal input → structured profile
-│   ├── retrieval.py          # Agent 2: ChromaDB semantic search
-│   ├── conflict_checker.py   # Agent 3: conflict detection + allergen flagging
-│   ├── budget_agent.py       # Agent 4: budget extraction and filtering
-│   └── routine_builder.py    # Agent 5: routine assembly
-├── pipeline.py               # End-to-end pipeline chaining all agents
-├── data_loader.py            # Data cleaning, merging, ChromaDB indexing
+│   ├── skin_profile.py                  # Agent 1: multimodal input → structured profile
+│   ├── retrieval.py                     # Agent 2: ChromaDB semantic search
+│   ├── conflict_checker.py              # Agent 3: conflict detection + allergen flagging
+│   ├── budget_agent.py                  # Agent 4: budget extraction and filtering
+│   └── routine_builder.py               # Agent 5: routine assembly
+├── pipeline.py                          # End-to-end pipeline chaining all agents
+├── data_loader.py                       # Data cleaning, merging, ChromaDB indexing
 ├── data/
-│   ├── cosmetics.csv
+│   ├── cosmetics.csv                    
 │   ├── ingredientsList.csv
 │   ├── skincare_products_clean.csv
-│   └── README.md             # Dataset download instructions
+│   └── README.md                        # Dataset download instructions
 ├── notebooks/
-│   ├── build_modules.ipynb   # Legacy notebook, no longer needed. Edit .py files directly on GitHub.
-│   └── demo.ipynb            # Runs the pipeline with tests and evaluation
+│   ├── deprecated_build_modules.ipynb   # Legacy notebook, no longer used (deprecated)
+│   └── demo.ipynb                       # Runs pipeline with tests and evaluation
 └── README.md
 ```
 ## Setup
@@ -48,8 +46,8 @@ checks for ingredient conflicts and allergens, and builds structured AM/PM routi
   
 Note:
 - The project now uses GitHub as the source of truth for all `.py` files.
-- You do not need to run `build_modules.ipynb` anymore.
-- To make code changes, edit the `.py` files directly in GitHub and re-run `demo.ipynb` (which will pull the latest version).
+- Do not run `notebooks/deprecated_build_modules.ipynb` (it is deprecated and only kept for reference).
+- To make changes, edit `.py` files directly in GitHub and re-run `notebooks/demo.ipynb`, which will pull latest version.
 
 ## Datasets
 The following datasets are required and should be placed in your Google Drive at  
