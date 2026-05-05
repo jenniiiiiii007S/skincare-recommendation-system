@@ -152,9 +152,13 @@ def filter_products_by_budget(products, budget_profile):
       3. Tier-derived limit if overall_limit is null
       4. No filter if tier is 'any' and nothing else is set
 
-    Falls back to cheapest available option if a product type is
-    wiped out entirely after filtering, so the routine is never incomplete.
+    If a product type has no in-budget option, the cheapest available product
+    is added as a fallback and a notice is recorded so the user is informed
+    that no cheaper alternatives exist in that category.
     """
+
+    # Reset fallback tracker each call
+    filter_products_by_budget.last_fallbacks = []
 
     # Short circuit when no budget mentioned at all
     if budget_profile["tier"] == "any" and budget_profile["overall_limit"] is None:
@@ -180,7 +184,7 @@ def filter_products_by_budget(products, budget_profile):
             return cat_limit
         if overall_limit is not None:
             return overall_limit
-        return tier_limit   # None means no cap
+        return tier_limit
 
     def parse_price(price_str):
         try:
@@ -193,7 +197,7 @@ def filter_products_by_budget(products, budget_profile):
             return True
         price = parse_price(p.get("price"))
         if price is None:
-            return True   # unknown price, keep rather than silently drop
+            return True
         if budget_profile["tier"] == "200_plus" and per_category.get(p["product_type"]) is None:
             return price >= 200.0
         return price <= limit
@@ -204,19 +208,40 @@ def filter_products_by_budget(products, budget_profile):
         if price_ok(p, limit):
             filtered.append(p)
 
-    # Safety fallback: if a product type lost all candidates, restore the cheapest one
+    # Fallback: when a category has no in-budget option, add the cheapest
+    # available product and record what the user's limit was vs. its actual price
     types_before = set(p["product_type"] for p in products)
     types_after  = set(p["product_type"] for p in filtered)
     missing      = types_before - types_after
 
+    fallback_records = []
     for ptype in missing:
         candidates = [p for p in products if p["product_type"] == ptype]
         candidates.sort(key=lambda p: parse_price(p.get("price")) or 9999)
-        filtered.append(candidates[0])
-        print("[budget_agent] No products in budget for " + ptype + " - added cheapest available as fallback.")
+        cheapest = candidates[0]
+        cheapest_price = parse_price(cheapest.get("price"))
+        attempted_limit = get_limit_for_type(ptype)
+
+        filtered.append(cheapest)
+
+        record = {
+            "product_type": ptype,
+            "product_name": cheapest.get("name"),
+            "actual_price": cheapest_price,
+            "user_limit": attempted_limit,
+        }
+        fallback_records.append(record)
+
+        print(
+            "[budget_agent] No products in budget for " + ptype +
+            " (limit: $" + str(int(attempted_limit)) + "). " +
+            "Using cheapest available: " + str(cheapest.get("name")) +
+            " at $" + str(cheapest_price) + "."
+        )
+
+    filter_products_by_budget.last_fallbacks = fallback_records
 
     return filtered
-
 
 def format_budget_for_prompt(budget_profile):
     """Return a human-readable budget summary to inject into the routine builder prompt."""
@@ -245,5 +270,16 @@ def format_budget_for_prompt(budget_profile):
     ]
     if cat_limits:
         lines.append("Per-category limits: " + ", ".join(cat_limits))
+
+    if budget_profile.get("budget_fallbacks"):
+        lines.append("\nNOTE: Some categories had no in-budget options. The cheapest available product was used:")
+        for fb in budget_profile["budget_fallbacks"]:
+            lines.append(
+                "  - " + fb["product_type"] +
+                ": user limit was $" + str(int(fb["user_limit"])) +
+                " but cheapest available is " + str(fb["product_name"]) +
+                " at $" + str(fb["actual_price"]) +
+                " (no cheaper option exists)"
+            )
 
     return "\n".join(lines) if lines else "No budget constraint specified."
