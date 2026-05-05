@@ -214,7 +214,7 @@ def full_pipeline(client, product_collection, ingredient_collection, user_input,
         "budget_profile": budget_profile,
     }
     
-    def baseline_gemini(client, user_input):
+def baseline_gemini(client, user_input):
     """Run raw Gemini without any pipeline agents, for baseline comparison.
 
     Args:
