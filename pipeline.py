@@ -213,3 +213,30 @@ def full_pipeline(client, product_collection, ingredient_collection, user_input,
         "routine_preference": routine_pref,
         "budget_profile": budget_profile,
     }
+    
+    def baseline_gemini(client, user_input):
+    """Run raw Gemini without any pipeline agents, for baseline comparison.
+
+    Args:
+        client: Google GenAI client instance.
+        user_input: Raw natural language string from the user.
+
+    Returns:
+        str: Raw Gemini response text.
+    """
+    prompt = f"""You are a skincare expert. A user is asking for skincare advice.
+Provide personalized product recommendations and a skincare routine based on their needs.
+
+User input: {user_input}
+
+Please recommend specific products and explain why they suit the user's skin type and concerns."""
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        return response.text
+    except Exception as e:
+        print(f"[baseline_gemini] Call failed: {e}")
+        return None
