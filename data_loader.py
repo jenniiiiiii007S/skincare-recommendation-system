@@ -5,7 +5,7 @@ import chromadb
 DATA_DIR = "data"
 
 # lookfantastic is a UK retailer, prices are in GBP - convert to USD
-GBP_TO_USD = 1.27   # approximate exchange rate, update if you want a different one
+GBP_TO_USD = 1.35
 
 def parse_ingredients_list(ingred_str):
     """Parse ingredient list from string representation of Python list."""
