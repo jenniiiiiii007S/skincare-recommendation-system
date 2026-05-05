@@ -114,7 +114,7 @@ def full_pipeline(client, product_collection, ingredient_collection, user_input,
     """Run the full skincare recommendation pipeline.
 
     Agent 1 (Skin Profile) -> Agent 2 (Product Retrieval) -> Agent 3 (Conflict Check) ->
-    Agent 4 (Budget) -> Agent 5 (Routine Builder)
+    Agent 4 (Budget Filter) -> Agent 5 (Routine Builder)
 
     Args:
         client: Google GenAI client instance.
