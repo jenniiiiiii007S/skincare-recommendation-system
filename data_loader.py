@@ -4,6 +4,8 @@ import chromadb
 
 DATA_DIR = "data"
 
+# lookfantastic is a UK retailer, prices are in GBP - convert to USD
+GBP_TO_USD = 1.27   # approximate exchange rate, update if you want a different one
 
 def parse_ingredients_list(ingred_str):
     """Parse ingredient list from string representation of Python list."""
@@ -44,6 +46,27 @@ def clean_list_string(val):
     except:
         return str(val).strip()
 
+def convert_gbp_to_usd(price_val):
+    """Convert a GBP price string or number to a USD-formatted string."""
+    if pd.isna(price_val):
+        return price_val
+    cleaned = str(price_val).replace("£", "").replace("$", "").replace(",", "").strip()
+    try:
+        gbp = float(cleaned)
+        usd = round(gbp * GBP_TO_USD, 2)
+        return f"${usd}"
+    except (ValueError, TypeError):
+        return price_val
+
+def format_usd(price_val):
+    """Normalize a USD price to a consistent $XX.XX string format."""
+    if pd.isna(price_val):
+        return price_val
+    cleaned = str(price_val).replace("$", "").replace(",", "").strip()
+    try:
+        return f"${float(cleaned)}"
+    except (ValueError, TypeError):
+        return price_val
 
 def load_and_clean_data():
     """Load all datasets, clean, merge, and return unified dataframes."""
@@ -62,7 +85,9 @@ def load_and_clean_data():
     skincare_df_clean["brand"] = skincare_df_clean["name"].apply(lambda x: x.split(" ")[0] if pd.notna(x) else "Unknown")
     for col in ["combination", "dry", "normal", "oily", "sensitive"]:
         skincare_df_clean[col] = None
-
+        
+    skincare_df_clean["price"] = skincare_df_clean["price"].apply(convert_gbp_to_usd)
+    
     # Clean cosmetics dataset
     cosmetics_df["ingredients_clean"] = cosmetics_df["Ingredients"].apply(
         lambda x: ", ".join([i.strip().lower() for i in str(x).split(",")]) if pd.notna(x) else ""
@@ -72,6 +97,8 @@ def load_and_clean_data():
     cosmetics_df_clean.columns = ["name", "product_type", "ingredients", "price", "brand",
                                    "combination", "dry", "normal", "oily", "sensitive"]
     cosmetics_df_clean["source"] = "sephora"
+
+    cosmetics_df_clean["price"] = cosmetics_df_clean["price"].apply(format_usd)
 
     # Merge
     products_df = pd.concat([skincare_df_clean, cosmetics_df_clean], ignore_index=True)
