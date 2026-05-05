@@ -44,7 +44,7 @@ skincare routine recommendations. The system accepts both text descriptions and 
    - load data and build the vector database
    - run pipeline and evaluation
   
-Notes:
+Note:
 - The project now uses GitHub as the source of truth for all `.py` files.
 - Do not run `notebooks/deprecated_build_modules.ipynb` (it is deprecated and only kept for reference).
 - To make changes, edit `.py` files directly in GitHub and re-run `notebooks/demo.ipynb`, which will pull latest version.
