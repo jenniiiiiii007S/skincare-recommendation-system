@@ -1,6 +1,9 @@
 import json
 import re
-def routine_builder_agent(client, profile, retrieved_products, conflict_report, routine_pref=None):
+from agents.budget_agent import format_budget_for_prompt
+
+
+def routine_builder_agent(client, profile, retrieved_products, conflict_report, routine_pref=None, budget_profile=None):
     """Assemble retrieved products into a structured skincare routine using Gemini.
 
     Args:
@@ -8,6 +11,8 @@ def routine_builder_agent(client, profile, retrieved_products, conflict_report, 
         profile: dict from skin_profile_agent (skin_type, concerns, allergies, etc.).
         retrieved_products: list of dicts with keys 'name', 'brand', 'product_type', 'ingredients', 'price'.
         conflict_report: dict with keys 'conflicts' (list) and 'allergy_flags' (list) from conflict checker.
+        routine_pref: 'AM', 'PM', or 'both' from pipeline routine preference detection.
+        budget_profile: dict from budget_agent with overall_limit, tier, per_category, raw_mention.
 
     Returns:
         dict with keys: morning_routine, evening_routine, notes, warnings.
@@ -35,6 +40,9 @@ def routine_builder_agent(client, profile, retrieved_products, conflict_report, 
     if not beneficial_str:
         beneficial_str = "None identified."
 
+    # Format budget info
+    budget_str = format_budget_for_prompt(budget_profile) if budget_profile else "No budget constraint specified."
+
     prompt = f"""You are a skincare routine specialist. Based on the user's skin profile,
 retrieved product candidates, and ingredient safety analysis, build a personalized
 morning and evening skincare routine.
@@ -46,6 +54,9 @@ USER PROFILE:
 - Age: {profile.get('age') or 'not specified'}
 - Goals: {', '.join(profile.get('goals') or []) or 'general skincare'}
 - Routine request: {profile.get('routine_request') or 'full routine'}
+
+BUDGET:
+{budget_str}
 
 AVAILABLE PRODUCTS:
 {product_list_str}
@@ -60,12 +71,19 @@ BENEFICIAL COMBINATIONS:
 {beneficial_str}
 
 INSTRUCTIONS:
-1. Select appropriate products from the list above for a morning and evening routine.
-2. DO NOT include any products flagged for allergy conflicts.
-3. If ingredient conflicts were detected, separate conflicting products into different routines
+1. BUDGET IS THE TOP PRIORITY. The user cannot afford products outside their budget,
+   so a routine they can't pay for is useless. NEVER select a product whose price
+   exceeds the user's per-category limit (if set), overall limit (if set), or tier limit.
+   If a category has no in-budget option, OMIT that step entirely and note it in warnings —
+   do NOT recommend an over-budget product as a fallback. The user can decide whether to
+   add that step later when they have more to spend.
+2. Select appropriate products from the list above for a morning and evening routine,
+   choosing the best skin-type and concern match WITHIN budget.
+3. DO NOT include any products flagged for allergy conflicts.
+4. If ingredient conflicts were detected, separate conflicting products into different routines
    (e.g., one in morning, one in evening) or exclude one.
-4. Order products in standard skincare order, for example: cleanser → toner → serum/treatment → moisturizer → sunscreen (AM only).
-5. Explain WHY each product was chosen based on the user's concerns and goals.
+5. Order products in standard skincare order, for example: cleanser → toner → serum/treatment → moisturizer → sunscreen (AM only).
+6. Explain WHY each product was chosen based on the user's concerns, goals, AND how it fits the budget.
 
 Return ONLY valid JSON with no markdown formatting, no backticks, no explanation outside the JSON.
 Use this exact structure:
