@@ -48,37 +48,49 @@ def run_conflict_check(client, ingredient_collection, products, profile):
     for ing in all_ingredients_list:
         norm = normalize_ingredient(ing)
         if norm in conflict_lookup:
-              for conflict in conflict_lookup[norm]:
+            for conflict in conflict_lookup[norm]:
                 partner = conflict["conflicts_with"]
                 partner_matches = any(normalize_ingredient(i) == partner for i in all_ingredients_list)
                 if partner_matches:
                     pair = tuple(sorted([norm, partner]))
-                    entry = {"ingredient_a": pair[0], "ingredient_b": pair[1],
-                            "reason": conflict["reason"], "source": "rules"}
+                    entry = {"ingredient_a": pair[0], "ingredient_b": pair[1], "reason": conflict["reason"], "source": "rules"}
                     if entry not in conflicts_found:
                         conflicts_found.append(entry)
 
     # Step 2: RAG fallback for ingredients not in hardcoded rules
     rag_conflicts = rag_conflict_check(client, ingredient_collection, all_ingredients_list)
     for c in rag_conflicts:
-        pair = tuple(sorted([c["ingredient_a"], c["ingredient_b"]]))
-        entry = {"ingredient_a": pair[0], "ingredient_b": pair[1],
-                 "reason": c["reason"], "source": "rag"}
+        pair = tuple(sorted([
+            normalize_ingredient(c["ingredient_a"]),
+            normalize_ingredient(c["ingredient_b"])
+        ]))
+        entry = {
+            "ingredient_a": pair[0],
+            "ingredient_b": pair[1],
+            "reason": c["reason"],
+            "source": "rag"
+        }
+
         if entry not in conflicts_found:
             conflicts_found.append(entry)
 
     # Beneficial pairs
     for ing in all_ingredients_list:
-        if ing in beneficial_lookup:
-            for pair in beneficial_lookup[ing]:
+        norm = normalize_ingredient(ing)
+        if norm in beneficial_lookup:
+            for pair in beneficial_lookup[norm]:
                 partner = pair["pairs_with"]
-                if partner in all_ingredients:
-                    sorted_pair = tuple(sorted([ing, partner]))
-                    entry = {"ingredient_a": sorted_pair[0], "ingredient_b": sorted_pair[1],
-                             "benefit": pair["benefit"]}
+                partner_matches = any(normalize_ingredient(i) == partner for i in all_ingredients_list)
+                if partner_matches:
+                    sorted_pair = tuple(sorted([norm, partner]))
+                    entry = {
+                        "ingredient_a": sorted_pair[0],
+                        "ingredient_b": sorted_pair[1],
+                        "benefit": pair["benefit"]
+                    }
                     if entry not in beneficial_found:
                         beneficial_found.append(entry)
-
+                        
     # Allergy check
     ALLERGEN_SYNONYMS = {
     "parabens": ["methylparaben", "ethylparaben", "propylparaben", "butylparaben", "isobutylparaben", "isopropylparaben"],
@@ -113,8 +125,9 @@ def run_conflict_check(client, ingredient_collection, products, profile):
 def full_pipeline(client, product_collection, ingredient_collection, user_input, products_per_type=3, image_path=None):
     """Run the full skincare recommendation pipeline.
 
-    Agent 1 (Skin Profile) -> Agent 2 (Product Retrieval) -> Agent 3 (Conflict Check) ->
-    Agent 4 (Budget Filter) -> Agent 5 (Routine Builder)
+
+    Agent 1 (Skin Profile) -> Agent 2 (Product Retrieval) -> Agent 3 (Budget Agent) ->
+    Agent 4 (Conflict Checker) -> Agent 5 (Routine Builder)
 
     Args:
         client: Google GenAI client instance.
@@ -167,18 +180,37 @@ def full_pipeline(client, product_collection, ingredient_collection, user_input,
         results = search_products(product_collection, query, n_results=fetch_n, product_type=ptype, skin_type=skin_type)
         for i in range(len(results["ids"][0])):
             meta = results["metadatas"][0][i]
+            
+            # Tag each product with its intended time of use
+            if routine_pref == "AM":
+                routine_time = "AM"
+            elif routine_pref == "PM":
+                routine_time = "PM"
+            else:
+                routine_time = "AM" if ptype == "Sun protect" else \
+                                "PM" if ptype in ["Retinol", "Face oil"] else "both"
+           
             all_products.append({
                 "name": meta["name"],
                 "brand": meta["brand"],
                 "product_type": meta["product_type"],
                 "ingredients": results["documents"][0][i],
                 "price": meta["price"],
-                # Tag each product with its intended time of use
-                "routine_time": "AM" if ptype == "Sun protect" else
-                               "PM" if ptype in ["Retinol", "Face oil"] else "both"
+                "routine_time": routine_time
+                
             })
 
-    # Agent 4: Strict budget filter (no over-budget fallback)
+    # Remove duplicate products so the same item is not recommended multiple times
+    seen = set()
+    deduped_products = []
+    for p in all_products:
+        key = (p["name"], p["brand"], p["product_type"])
+        if key not in seen:
+            seen.add(key)
+            deduped_products.append(p)
+    all_products = deduped_products
+    
+    # Agent 3: Strict budget filter (no over-budget fallback)
     all_products = filter_products_by_budget(all_products, budget_profile)
 
     # Surface omitted categories so routine_builder can warn the user
@@ -195,7 +227,7 @@ def full_pipeline(client, product_collection, ingredient_collection, user_input,
             type_counts[p["product_type"]] += 1
     all_products = trimmed
 
-    # Agent 3: Check for conflicts and allergies
+    # Agent 4: Check for conflicts and allergies
     conflict_report = run_conflict_check(client, ingredient_collection, all_products, profile)
 
     # Agent 5: Build the routine (passes routine_pref and budget_profile so Gemini respects both)
