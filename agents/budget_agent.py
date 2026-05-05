@@ -232,9 +232,15 @@ def filter_products_by_budget(products, budget_profile):
         }
         fallback_records.append(record)
 
+        #  Safely format budget limit to handle None without crashing
+        if attempted_limit is None:
+            limit_text = "no limit"
+        else:
+            limit_text = f"${int(attempted_limit)}"
+
         print(
             "[budget_agent] No products in budget for " + ptype +
-            " (limit: $" + str(int(attempted_limit)) + "). " +
+            " (limit: " + limit_text + "). " +
             "Using cheapest available: " + str(cheapest.get("name")) +
             " at $" + str(cheapest_price) + "."
         )
