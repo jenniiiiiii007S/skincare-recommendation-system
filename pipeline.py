@@ -182,9 +182,9 @@ def full_pipeline(client, product_collection, ingredient_collection, user_input,
     all_products = filter_products_by_budget(all_products, budget_profile)
 
     # Surface omitted categories so routine_builder can warn the user
-    omitted_categories = getattr(filter_products_by_budget, "last_omitted", [])
-    if omitted_categories:
-        budget_profile["omitted_categories"] = omitted_categories
+    fallback_records = getattr(filter_products_by_budget, "last_fallbacks", [])
+    if fallback_records:
+        budget_profile["budget_fallbacks"] = fallback_records
 
     # Trim back to products_per_type per type so the prompt stays manageable
     type_counts = defaultdict(int)
