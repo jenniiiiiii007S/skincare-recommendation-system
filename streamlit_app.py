@@ -152,6 +152,7 @@ with st.sidebar:
     if uploaded is not None:
         st.image(uploaded, caption="Will be analyzed with your next message", width=200)
     st.caption("Privacy: photos are not stored by this app, but processed by Google's Gemini API.")
+    st.caption("This tool is for educational purposes and is not medical advice.")
 
     st.divider()
 
