@@ -13,7 +13,7 @@ from pipeline import full_pipeline
 st.set_page_config(page_title="Facial Skincare Routine Assistant", page_icon="🧴", layout="centered")
 
 st.title("🧴 Facial Skincare Routine Assistant")
-st.caption(""Tell me about your facial skincare needs. You can upload a selfie, mention allergies, and set a budget."")
+st.caption("Tell me about your facial skincare needs. You can upload a selfie, mention allergies, and set a budget."")
 
 @st.cache_resource(show_spinner="Loading data and building vector database...")
 def init_pipeline():
@@ -145,7 +145,7 @@ for msg in st.session_state.messages:
 
 
 with st.sidebar:
-    st.header("Optional photo")
+    st.header("Optional facial photo")
     uploaded = st.file_uploader(
         "Upload a clear photo of your face",
         type=["png", "jpg", "jpeg", "webp"],
