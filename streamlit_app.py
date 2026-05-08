@@ -10,11 +10,10 @@ from data_loader import load_and_clean_data, build_vector_database
 from pipeline import full_pipeline
 
 
-st.set_page_config(page_title="Skincare Routine Assistant", page_icon="🧴", layout="centered")
+st.set_page_config(page_title="Facial Skincare Routine Assistant", page_icon="🧴", layout="centered")
 
 st.title("🧴 Facial Skincare Routine Assistant")
 st.caption(""Tell me about your facial skincare needs. You can upload a selfie, mention allergies, and set a budget."")
-
 
 @st.cache_resource(show_spinner="Loading data and building vector database...")
 def init_pipeline():
