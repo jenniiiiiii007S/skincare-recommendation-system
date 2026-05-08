@@ -12,7 +12,7 @@ from pipeline import full_pipeline
 
 st.set_page_config(page_title="Skincare Routine Assistant", page_icon="🧴", layout="centered")
 
-st.title("🧴 Skincare Routine Assistant")
+st.title("🧴 Facical Skincare Routine Assistant")
 st.caption("Tell me about your skin. You can also upload a selfie, mention allergies, or set a budget.")
 
 
