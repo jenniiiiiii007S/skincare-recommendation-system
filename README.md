@@ -81,3 +81,6 @@ Image datasets are not included in this repository due to size constraints.
 - GitHub (to access project repository)
 - Gemini API key with billing enabled (Paid 1 tier)
 - `google-genai`, `chromadb`, `pandas` (installed via setup cell in demo.ipynb)
+
+## Interactive Demo
+Public Streamlit app:
