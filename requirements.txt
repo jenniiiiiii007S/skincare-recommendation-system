@@ -3,3 +3,4 @@ google-genai
 chromadb==1.5.9
 pandas
 pillow
+opentelemetry-exporter-otlp-proto-grpc==1.25.0
