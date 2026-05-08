@@ -13,7 +13,7 @@ from pipeline import full_pipeline
 st.set_page_config(page_title="Skincare Routine Assistant", page_icon="🧴", layout="centered")
 
 st.title("🧴 Facial Skincare Routine Assistant")
-st.caption("Tell me about your skin. You can also upload a selfie, mention allergies, or set a budget.")
+st.caption(""Tell me about your facial skincare needs. You can upload a selfie, mention allergies, and set a budget."")
 
 
 @st.cache_resource(show_spinner="Loading data and building vector database...")
