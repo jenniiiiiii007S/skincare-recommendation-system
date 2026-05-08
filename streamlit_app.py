@@ -63,9 +63,11 @@ def format_routine(result):
         parts.append("**Budget tier:** " + budget["tier"].replace("_", " "))
 
     # FIX 1: build price lookup from retrieved products
-    price_lookup = {}
-    for p in result.get("retrieved_products", []):
-        price_lookup[p["name"]] = p.get("price", "")
+    price = price_lookup.get(step.get("product_name", ""), "")
+    if price:
+        # strip trailing .0 for cleaner display
+        price_clean = price.rstrip("0").rstrip(".") if "." in price else price
+        line += " — " + price_clean
 
     routine = result.get("routine", {}) or {}
 
