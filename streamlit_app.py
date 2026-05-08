@@ -145,7 +145,7 @@ for msg in st.session_state.messages:
 with st.sidebar:
     st.header("Optional photo")
     uploaded = st.file_uploader(
-        "Upload a clear photo of your skin",
+        "Upload a clear photo of your face",
         type=["png", "jpg", "jpeg", "webp"],
         help="Photos go to Google Gemini for analysis."
     )
