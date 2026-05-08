@@ -13,7 +13,8 @@ from pipeline import full_pipeline
 st.set_page_config(page_title="Facial Skincare Routine Assistant", page_icon="🧴", layout="centered")
 
 st.title("🧴 Facial Skincare Routine Assistant")
-st.caption("Tell me about your facial skincare needs. You can upload a selfie, mention allergies, and set a budget."")
+st.caption("Tell me about your facial skincare needs. You can upload a selfie, mention allergies, and set a budget.")
+
 
 @st.cache_resource(show_spinner="Loading data and building vector database...")
 def init_pipeline():
@@ -45,7 +46,6 @@ def format_routine(result):
     if profile.get("image_observations"):
         parts.append("**📸 From your photo:** " + profile["image_observations"])
 
-    # FIX 2: double newlines so each profile field renders on its own line
     profile_lines = []
     if profile.get("skin_type"):
         profile_lines.append("Skin type: " + str(profile["skin_type"]))
@@ -62,12 +62,10 @@ def format_routine(result):
     elif budget.get("tier") and budget["tier"] != "any":
         parts.append("**Budget tier:** " + budget["tier"].replace("_", " "))
 
-    # FIX 1: build price lookup from retrieved products
-    price = price_lookup.get(step.get("product_name", ""), "")
-    if price:
-        # strip trailing .0 for cleaner display
-        price_clean = price.rstrip("0").rstrip(".") if "." in price else price
-        line += " — " + price_clean
+    # Build price lookup from retrieved products
+    price_lookup = {}
+    for p in result.get("retrieved_products", []):
+        price_lookup[p["name"]] = p.get("price", "")
 
     routine = result.get("routine", {}) or {}
 
@@ -81,7 +79,8 @@ def format_routine(result):
                 line += " *(" + str(step["brand"]) + ")*"
             price = price_lookup.get(step.get("product_name", ""), "")
             if price:
-                line += " — " + str(price)
+                price_clean = price.rstrip("0").rstrip(".") if "." in price else price
+                line += " — " + price_clean
             parts.append(line)
             if step.get("why"):
                 parts.append("> " + step["why"])
@@ -96,7 +95,8 @@ def format_routine(result):
                 line += " *(" + str(step["brand"]) + ")*"
             price = price_lookup.get(step.get("product_name", ""), "")
             if price:
-                line += " — " + str(price)
+                price_clean = price.rstrip("0").rstrip(".") if "." in price else price
+                line += " — " + price_clean
             parts.append(line)
             if step.get("why"):
                 parts.append("> " + step["why"])
@@ -145,7 +145,7 @@ for msg in st.session_state.messages:
 
 
 with st.sidebar:
-    st.header("Optional facial photo")
+    st.header("Optional photo")
     uploaded = st.file_uploader(
         "Upload a clear photo of your face",
         type=["png", "jpg", "jpeg", "webp"],
@@ -158,7 +158,6 @@ with st.sidebar:
 
     st.divider()
 
-    # FIX 3: Start over button
     if st.button("🔄 Start over", use_container_width=True):
         st.session_state.messages = [INITIAL_MESSAGE]
         st.rerun()
