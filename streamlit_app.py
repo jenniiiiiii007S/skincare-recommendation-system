@@ -30,6 +30,11 @@ def init_pipeline():
 
 client, product_collection, ingredient_collection = init_pipeline()
 
+INITIAL_MESSAGE = {
+    "role": "assistant",
+    "content": "Hi! Tell me about your skin — type, concerns, allergies, and budget. You can upload a selfie too.\n\nExamples:\n- *I have oily acne-prone skin and want a routine under $80*\n- *Dry sensitive skin, allergic to fragrance, drugstore budget*\n- *Anti-aging routine for combination skin, around $150*",
+}
+
 
 def format_routine(result):
     if "error" in result:
@@ -41,6 +46,7 @@ def format_routine(result):
     if profile.get("image_observations"):
         parts.append("**📸 From your photo:** " + profile["image_observations"])
 
+    # FIX 2: double newlines so each profile field renders on its own line
     profile_lines = []
     if profile.get("skin_type"):
         profile_lines.append("Skin type: " + str(profile["skin_type"]))
@@ -49,7 +55,7 @@ def format_routine(result):
     if profile.get("allergies"):
         profile_lines.append("Allergies: " + ", ".join(profile["allergies"]))
     if profile_lines:
-        parts.append("**Profile detected**\n\n" + "\n".join(profile_lines))
+        parts.append("**Profile detected**\n\n" + "\n\n".join(profile_lines))
 
     budget = result.get("budget_profile", {}) or {}
     if budget.get("overall_limit"):
@@ -57,14 +63,24 @@ def format_routine(result):
     elif budget.get("tier") and budget["tier"] != "any":
         parts.append("**Budget tier:** " + budget["tier"].replace("_", " "))
 
+    # FIX 1: build price lookup from retrieved products
+    price_lookup = {}
+    for p in result.get("retrieved_products", []):
+        price_lookup[p["name"]] = p.get("price", "")
+
     routine = result.get("routine", {}) or {}
 
     if routine.get("morning_routine"):
         parts.append("### ☀️ Morning Routine")
         for step in routine["morning_routine"]:
-            line = "**" + str(step.get("step", "")) + ". " + str(step.get("product_type", "")) + "** — " + str(step.get("product_name", ""))
+            line = ("**" + str(step.get("step", "")) + ". " +
+                    str(step.get("product_type", "")) + "** — " +
+                    str(step.get("product_name", "")))
             if step.get("brand"):
-                line = line + " *(" + str(step["brand"]) + ")*"
+                line += " *(" + str(step["brand"]) + ")*"
+            price = price_lookup.get(step.get("product_name", ""), "")
+            if price:
+                line += " — " + str(price)
             parts.append(line)
             if step.get("why"):
                 parts.append("> " + step["why"])
@@ -72,9 +88,14 @@ def format_routine(result):
     if routine.get("evening_routine"):
         parts.append("### 🌙 Evening Routine")
         for step in routine["evening_routine"]:
-            line = "**" + str(step.get("step", "")) + ". " + str(step.get("product_type", "")) + "** — " + str(step.get("product_name", ""))
+            line = ("**" + str(step.get("step", "")) + ". " +
+                    str(step.get("product_type", "")) + "** — " +
+                    str(step.get("product_name", "")))
             if step.get("brand"):
-                line = line + " *(" + str(step["brand"]) + ")*"
+                line += " *(" + str(step["brand"]) + ")*"
+            price = price_lookup.get(step.get("product_name", ""), "")
+            if price:
+                line += " — " + str(price)
             parts.append(line)
             if step.get("why"):
                 parts.append("> " + step["why"])
@@ -92,7 +113,11 @@ def format_routine(result):
     if budget.get("budget_fallbacks"):
         parts.append("### 💰 Budget Notice")
         for fb in budget["budget_fallbacks"]:
-            parts.append("- **" + fb["product_type"] + "**: cheapest available is $" + str(fb["actual_price"]) + " (your limit was $" + str(int(fb["user_limit"])) + ")")
+            parts.append(
+                "- **" + fb["product_type"] + "**: cheapest available is $" +
+                str(fb["actual_price"]) + " (your limit was $" +
+                str(int(fb["user_limit"])) + ")"
+            )
 
     return "\n\n".join(parts) if parts else "Could not generate a routine. Try rephrasing."
 
@@ -106,12 +131,7 @@ def save_uploaded_file(uploaded_file):
 
 
 if "messages" not in st.session_state:
-    st.session_state.messages = []
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": "Hi! Tell me about your skin — type, concerns, allergies, and budget. You can upload a selfie too.\n\nExamples:\n- *I have oily acne-prone skin and want a routine under $80*\n- *Dry sensitive skin, allergic to fragrance, drugstore budget*\n- *Anti-aging routine for combination skin, around $150*",
-    })
-
+    st.session_state.messages = [INITIAL_MESSAGE]
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
@@ -133,6 +153,13 @@ with st.sidebar:
     if uploaded is not None:
         st.image(uploaded, caption="Will be analyzed with your next message", width=200)
     st.caption("Privacy: photos are not stored by this app, but processed by Google's Gemini API.")
+
+    st.divider()
+
+    # FIX 3: Start over button
+    if st.button("🔄 Start over", use_container_width=True):
+        st.session_state.messages = [INITIAL_MESSAGE]
+        st.rerun()
 
 
 user_message = st.chat_input("Describe your skin...")
