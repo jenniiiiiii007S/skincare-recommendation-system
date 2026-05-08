@@ -96,4 +96,5 @@ python3 -m streamlit run streamlit_app.py
 ```
 
 ## Public Interactive Demo
-Streamlit app:
+Streamlit app: https://skincare-recommendation-system-tys3sc3nghy9ybioypataf.streamlit.app/
+
