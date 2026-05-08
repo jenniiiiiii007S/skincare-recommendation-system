@@ -496,6 +496,21 @@ def save_uploaded_file(uploaded_file):
     tmp.close()
     return tmp.name
 
+def is_skincare_query(client, user_input):
+    """Returns True if the input is skincare-related."""
+    prompt = (
+        'Is this message asking for skincare advice, a skincare routine, '
+        'skin concerns, or product recommendations? Reply ONLY "yes" or "no".\n\n'
+        f'Message: "{user_input}"'
+    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash", contents=prompt
+        )
+        return response.text.strip().lower().startswith("y")
+    except Exception:
+        return True  # fail open — if check errors, let the pipeline try
+
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 tab_about, tab_app = st.tabs(["🌿  About", "✨  Try It"])
@@ -631,23 +646,32 @@ with tab_app:
             "content": user_message,
             "image_path": image_path,
         })
-        with st.chat_message("user"):
-            if image_path:
-                try:
-                    st.image(image_path, width=200)
-                except Exception:
-                    pass
-            st.markdown(user_message)
 
-        with st.chat_message("assistant"):
+    with st.chat_message("assistant"):
             with st.spinner("Building your routine…"):
                 try:
-                    result = full_pipeline(
-                        client, product_collection, ingredient_collection,
-                        user_input=user_message,
-                        image_path=image_path,
-                    )
-                    response_text = format_routine_html(result)
+                    if not is_skincare_query(client, user_message):
+                        response_text = (
+                            '<div class="block-card warn">'
+                            '<div class="block-title">Out of scope</div>'
+                            '<p style="font-size:0.85rem;color:var(--text);margin:0.3rem 0 0 0">'
+                            "I'm specialized in skincare routines and product recommendations. "
+                            "Try describing your skin type, concerns, allergies, or budget — for example: "
+                            "<em>\"I have dry sensitive skin and want a gentle routine under $60.\"</em>"
+                            "</p></div>"
+                        )
+                    else:
+                        result = full_pipeline(
+                            client, product_collection, ingredient_collection,
+                            user_input=user_message,
+                            image_path=image_path,
+                        )
+                        # Image sanity check
+                        if image_path and result.get("profile", {}) and not result["profile"].get("image_observations"):
+                            result.setdefault("routine", {}).setdefault("notes", []).insert(
+                                0, "No skin conditions could be detected from the uploaded photo — please ensure it shows your face clearly in good lighting."
+                            )
+                        response_text = format_routine_html(result)
                 except Exception as e:
                     response_text = f"<p style='color:#c0392b'>Something went wrong: {_e(str(e))}</p>"
 
