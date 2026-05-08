@@ -26,6 +26,8 @@ skincare routine recommendations. The system accepts both text descriptions and 
 │   └── routine_builder.py               # Agent 5: routine assembly
 ├── pipeline.py                          # End-to-end pipeline chaining all agents
 ├── data_loader.py                       # Data cleaning, merging, ChromaDB indexing
+├── requirements.txt                     # Python dependencies for deployment
+├── streamlit_app.py                     # Interactive Streamlit frontend
 ├── data/
 │   ├── cosmetics.csv                    
 │   ├── ingredientsList.csv
@@ -80,7 +82,18 @@ Image datasets are not included in this repository due to size constraints.
 - Google Colab (recommended)
 - GitHub (to access project repository)
 - Gemini API key with billing enabled (Paid 1 tier)
-- `google-genai`, `chromadb`, `pandas` (installed via setup cell in demo.ipynb)
+- Python dependencies listed in `requirements.txt`
 
-## Interactive Demo
-Public Streamlit app:
+## Interactive Streamlit App
+The project includes a Streamlit frontend (`streamlit_app.py`) that allows users to interact with the system through text input and optional facial image upload.
+
+### Run locally
+
+```bash
+pip install -r requirements.txt
+export GEMINI_API_KEY="your_key_here"
+python3 -m streamlit run streamlit_app.py
+```
+
+## Public Interactive Demo
+Streamlit app:
