@@ -437,24 +437,24 @@ def format_routine_html(result):
         price_lookup[p["name"]] = clean
 
     def render_steps(steps, time_class):
-    html = ""
-    for step in steps:
-        name = _e(step.get("product_name", ""))
-        brand = _e(step.get("brand", ""))
-        ptype = _e(step.get("product_type", ""))
-        why = _e(step.get("why", ""))
-        price = price_lookup.get(step.get("product_name", ""), "")
-        price_html = f'<span class="r-price">{_e(price)}</span>' if price else ""
-        why_html = f'<div class="r-why">{why}</div>' if why else ""
-        html += (
-            f'<div class="r-card {time_class}">'
-            f'<div class="r-type">{ptype}</div>'
-            f'<div class="r-name">{name}</div>'
-            f'<div class="r-meta"><span class="r-brand">{brand}</span>{price_html}</div>'
-            f'{why_html}'
-            f'</div>'
-        )
-    return html
+        html = ""
+        for step in steps:
+            name = _e(step.get("product_name", ""))
+            brand = _e(step.get("brand", ""))
+            ptype = _e(step.get("product_type", ""))
+            why = _e(step.get("why", ""))
+            price = price_lookup.get(step.get("product_name", ""), "")
+            price_html = f'<span class="r-price">{_e(price)}</span>' if price else ""
+            why_html = f'<div class="r-why">{why}</div>' if why else ""
+            html += (
+                f'<div class="r-card {time_class}">'
+                f'<div class="r-type">{ptype}</div>'
+                f'<div class="r-name">{name}</div>'
+                f'<div class="r-meta"><span class="r-brand">{brand}</span>{price_html}</div>'
+                f'{why_html}'
+                f'</div>'
+            )
+        return html
 
     if routine.get("morning_routine"):
         parts.append('<div class="routine-section"><span class="section-name morning">☀ Morning Routine</span></div>')
