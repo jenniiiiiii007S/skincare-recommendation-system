@@ -638,7 +638,7 @@ with tab_app:
     # Chat input
     user_message = st.chat_input("Describe your skin…")
 
-    if user_message:
+    if user_message and user_message.strip():
         image_path = save_uploaded_file(uploaded) if uploaded is not None else None
 
         st.session_state.messages.append({
