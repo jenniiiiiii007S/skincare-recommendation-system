@@ -475,47 +475,40 @@ with tab_app:
         with st.spinner("Building your routine…"):
             try:
                 if is_greeting(user_message):
-                    # Friendly redirect for greetings
                     response_text = GREETING_RESPONSE
 
-                elif not is_skincare_query(client, user_message):
-                    # Out-of-scope warning
-                    response_text = (
-                        '<div class="block-card warn">'
-                        '<div class="block-title">Out of scope</div>'
-                        '<p style="font-size:0.85rem;color:var(--text);margin:0.3rem 0 0 0">'
-                        "I'm specialized in skincare routines and product recommendations. "
-                        "Try describing your skin type, concerns, allergies, or budget — for example: "
-                        "<em>\"I have dry sensitive skin and want a gentle routine under $60.\"</em>"
-                        "</p></div>"
-                    )
-
                 else:
-                    # Build combined input from conversation history for memory
+                    # Build combined context first, validate using it
                     combined = build_combined_input(st.session_state.messages)
                     pipeline_input = combined if combined else user_message
 
-                    result = full_pipeline(
-                        client, product_collection, ingredient_collection,
-                        user_input=pipeline_input,
-                        image_path=image_path,
-                    )
-
-                    # Image sanity check
-                    if (image_path
-                            and result.get("profile", {})
-                            and not result["profile"].get("image_observations")):
-                        result.setdefault("routine", {}).setdefault("notes", []).insert(
-                            0, "No skin conditions could be detected from the uploaded photo — "
-                               "please ensure it shows your face clearly in good lighting."
+                    if not is_skincare_query(client, pipeline_input):
+                        response_text = (
+                            '<div class="block-card warn">'
+                            '<div class="block-title">Out of scope</div>'
+                            '<p style="font-size:0.85rem;color:var(--text);margin:0.3rem 0 0 0">'
+                            "I'm specialized in skincare routines and product recommendations. "
+                            "Try describing your skin type, concerns, allergies, or budget — for example: "
+                            "<em>\"I have dry sensitive skin and want a gentle routine under $60.\"</em>"
+                            "</p></div>"
                         )
-
-                    response_text = format_routine_html(result)
+                    else:
+                        result = full_pipeline(
+                            client, product_collection, ingredient_collection,
+                            user_input=pipeline_input,
+                            image_path=image_path,
+                        )
+                        if (image_path
+                                and result.get("profile", {})
+                                and not result["profile"].get("image_observations")):
+                            result.setdefault("routine", {}).setdefault("notes", []).insert(
+                                0, "No skin conditions could be detected from the uploaded photo — "
+                                   "please ensure it shows your face clearly in good lighting."
+                            )
+                        response_text = format_routine_html(result)
 
             except Exception as e:
-                response_text = (
-                    f"<p style='color:#c0392b'>Something went wrong: {_e(str(e))}</p>"
-                )
+                response_text = f"<p style='color:#c0392b'>Something went wrong: {_e(str(e))}</p>"
 
         # Append response to state
         st.session_state.messages.append({"role": "assistant", "content": response_text})
