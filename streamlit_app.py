@@ -451,13 +451,19 @@ def check_product_compatibility(client, product_collection, user_message: str, u
                 allergen_hits.append(allergen)
 
     # Single Gemini call for assessment
+
     assess_prompt = (
-        f'User skin context: "{user_context[:400]}"\n'
-        f'Product: {meta["name"]} by {meta["brand"]}\n'
-        f'Suitable skin types (database): {meta.get("skin_types", "not specified")}\n'
-        f'Ingredients preview: {doc[:400]}\n\n'
-        f'In 2 sentences: is this product suitable for this user? Be direct and specific.'
+    f'The user asked about: "{product_name}"\n'
+    f'The closest product found in our database is: {meta["name"]} by {meta["brand"]}\n'
+    f'User skin context: "{user_context[:400]}"\n'
+    f'Suitable skin types (database): {meta.get("skin_types", "not specified")}\n'
+    f'Ingredients preview: {doc[:400]}\n\n'
+    f'If the database product is clearly a different product from what the user asked about, '
+    f'say so upfront and frame the response as "the closest product we found is X" — '
+    f'do not give a yes/no suitability verdict for the wrong product. '
+    f'If it is the same product, give a direct 2-sentence suitability assessment.'
     )
+    
     try:
         ar = client.models.generate_content(model="gemini-2.5-flash", contents=assess_prompt)
         assessment = ar.text.strip()
