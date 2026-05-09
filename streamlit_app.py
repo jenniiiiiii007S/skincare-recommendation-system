@@ -411,7 +411,7 @@ def check_product_compatibility(client, product_collection, user_message: str, u
         not_found = len(query_words & returned_words) == 0
         
     # Product not in database — fall back to Gemini general knowledge
-    if not results["ids"][0]:
+    if not_found:
         fallback_prompt = (
             f'User context: "{user_context[:400]}"\n'
             f'They are asking about: "{product_name}"\n'
