@@ -142,8 +142,12 @@ def full_pipeline(client, product_collection, ingredient_collection, user_input,
     """
 
     # Step 0: Detect routine preference and budget profile before any agent runs
-    routine_pref = detect_routine_preference(client, user_input)
-    budget_profile = budget_agent(client, user_input)
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        future_routine = executor.submit(detect_routine_preference, client, user_input)
+        future_budget  = executor.submit(budget_agent, client, user_input)
+        routine_pref   = future_routine.result()
+        budget_profile = future_budget.result()
 
     print(f"Routine preference detected: {routine_pref}")
     print(f"Budget tier detected: {budget_profile['tier']}")
