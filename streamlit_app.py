@@ -11,7 +11,7 @@ from data_loader import load_and_clean_data, build_vector_database
 from pipeline import full_pipeline
 
 st.set_page_config(
-    page_title="SkinAgent — Personalized Skincare AI",
+    page_title="SkinAgent — Personalized Facial Skincare AI",
     page_icon="🌿",
     layout="centered",
     initial_sidebar_state="collapsed",
@@ -383,7 +383,7 @@ client, product_collection, ingredient_collection = init_pipeline()
 INITIAL_MESSAGE = {
     "role": "assistant",
     "content": (
-        "Hi! Tell me about your skin — type, concerns, allergies, and budget. "
+        "Hi! Tell me about your facial skin — type, concerns, allergies, and budget. "
         "You can also add a facial photo below for visual analysis.\n\n"
         "*Examples:*\n"
         "- I have oily acne-prone skin and want a routine under $80\n"
