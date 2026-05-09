@@ -133,91 +133,80 @@ def load_and_clean_data():
     return products_df, inci_df
 
 
-def build_vector_database(products_df, inci_df):
-    """Create ChromaDB collections for products and ingredients."""
+def build_vector_database(products_df, inci_df, persist_dir="./chroma_db"):
+    """Load ChromaDB collections from disk, or build and persist if first run."""
 
-    chroma_client = chromadb.Client()
+    chroma_client = chromadb.PersistentClient(path=persist_dir)
 
-    # Product collection
-    try:
-        chroma_client.delete_collection("skincare_products")
-    except:
-        pass
-
-    product_collection = chroma_client.create_collection(
+    # ── Product collection ────────────────────────────────────────────────────
+    product_collection = chroma_client.get_or_create_collection(
         name="skincare_products",
         metadata={"hnsw:space": "cosine"}
     )
 
-    product_documents = []
-    product_metadata = []
-    product_ids = []
+    if product_collection.count() == 0:
+        print("Building product collection...")
+        product_documents, product_metadata, product_ids = [], [], []
 
-    for idx, row in products_df.iterrows():
-        skin_types = []
-        for st in ["combination", "dry", "normal", "oily", "sensitive"]:
-            if row.get(st) == 1:
-                skin_types.append(st)
-        skin_type_str = ", ".join(skin_types) if skin_types else "not specified"
+        for idx, row in products_df.iterrows():
+            skin_types = [st for st in ["combination", "dry", "normal", "oily", "sensitive"]
+                          if row.get(st) == 1]
+            skin_type_str = ", ".join(skin_types) if skin_types else "not specified"
 
-        doc = (
-            f"Product: {row['name']}. "
-            f"Brand: {row['brand']}. "
-            f"Type: {row['product_type']}. "
-            f"Price: {row['price']}. "
-            f"Suitable for skin types: {skin_type_str}. "
-            f"Ingredients: {row['ingredients']}."
-        )
-        product_documents.append(doc)
-        product_metadata.append({
-            "name": str(row["name"]),
-            "brand": str(row["brand"]),
-            "product_type": str(row["product_type"]),
-            "price": str(row["price"]),
-            "source": str(row["source"]),
-            "skin_types": skin_type_str
-        })
-        product_ids.append(f"product_{idx}")
+            doc = (
+                f"Product: {row['name']}. "
+                f"Brand: {row['brand']}. "
+                f"Type: {row['product_type']}. "
+                f"Price: {row['price']}. "
+                f"Suitable for skin types: {skin_type_str}. "
+                f"Ingredients: {row['ingredients']}."
+            )
+            product_documents.append(doc)
+            product_metadata.append({
+                "name": str(row["name"]),
+                "brand": str(row["brand"]),
+                "product_type": str(row["product_type"]),
+                "price": str(row["price"]),
+                "source": str(row["source"]),
+                "skin_types": skin_type_str,
+            })
+            product_ids.append(f"product_{idx}")
 
-    batch_size = 500
-    for i in range(0, len(product_documents), batch_size):
-        end = min(i + batch_size, len(product_documents))
-        product_collection.add(
-            documents=product_documents[i:end],
-            metadatas=product_metadata[i:end],
-            ids=product_ids[i:end]
-        )
+        batch_size = 500
+        for i in range(0, len(product_documents), batch_size):
+            end = min(i + batch_size, len(product_documents))
+            product_collection.add(
+                documents=product_documents[i:end],
+                metadatas=product_metadata[i:end],
+                ids=product_ids[i:end],
+            )
+    else:
+        print(f"Loaded {product_collection.count()} products from disk.")
 
-    # Ingredient collection
-    try:
-        chroma_client.delete_collection("skincare_ingredients")
-    except:
-        pass
-
-    ingredient_collection = chroma_client.create_collection(
+    # ── Ingredient collection ─────────────────────────────────────────────────
+    ingredient_collection = chroma_client.get_or_create_collection(
         name="skincare_ingredients",
         metadata={"hnsw:space": "cosine"}
     )
 
-    ingredient_ids = []
-    idx = 0
-    while idx < len(inci_df):
-        ingredient_ids.append("ingredient_" + str(idx))
-        idx = idx + 1
+    if ingredient_collection.count() == 0:
+        print("Building ingredient collection...")
+        ingredient_ids = [f"ingredient_{i}" for i in range(len(inci_df))]
+        ingredient_metadata = [
+            {
+                "name": str(row["name"]) if pd.notna(row["name"]) else "",
+                "good_for": str(row["good_for"]),
+                "avoid_for": str(row["avoid_for"]),
+            }
+            for _, row in inci_df.iterrows()
+        ]
+        ingredient_collection.add(
+            documents=inci_df["full_description"].tolist(),
+            metadatas=ingredient_metadata,
+            ids=ingredient_ids,
+        )
+    else:
+        print(f"Loaded {ingredient_collection.count()} ingredients from disk.")
 
-    ingredient_metadata = []
-    for idx, row in inci_df.iterrows():
-        ingredient_metadata.append({
-            "name": str(row["name"]) if pd.notna(row["name"]) else "",
-            "good_for": str(row["good_for"]),
-            "avoid_for": str(row["avoid_for"])
-        })
-
-    ingredient_collection.add(
-        documents=inci_df["full_description"].tolist(),
-        metadatas=ingredient_metadata,
-        ids=ingredient_ids
-    )
-
-    print(f"Indexed {product_collection.count()} products and {ingredient_collection.count()} ingredients.")
+    print(f"Ready: {product_collection.count()} products, {ingredient_collection.count()} ingredients.")
     return product_collection, ingredient_collection
