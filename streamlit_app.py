@@ -285,7 +285,15 @@ def format_routine_html(result):
             brand = _e(step.get("brand", ""))
             ptype = _e(step.get("product_type", ""))
             why   = _e(step.get("why", ""))
-            price = price_lookup.get(step.get("product_name", ""), "")
+            step_name = step.get("product_name", "")
+            price = price_lookup.get(step_name, "")
+            if not price:
+                # Fuzzy fallback: check if step name is substring of a DB key or vice versa
+                lower = step_name.lower()
+                for key, val in price_lookup.items():
+                    if val and (lower in key.lower() or key.lower() in lower):
+                        price = val
+                        break
             price_html = f'<span class="r-price">{_e(price)}</span>' if price else ""
             why_html = f'<div class="r-why">{why}</div>' if why else ""
             html += (
