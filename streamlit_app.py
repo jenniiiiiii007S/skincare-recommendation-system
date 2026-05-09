@@ -646,8 +646,15 @@ with tab_app:
             "content": user_message,
             "image_path": image_path,
         })
+        with st.chat_message("user"):
+            if image_path:
+                try:
+                    st.image(image_path, width=200)
+                except Exception:
+                    pass
+            st.markdown(user_message)
 
-    with st.chat_message("assistant"):
+        with st.chat_message("assistant"):
             with st.spinner("Building your routine…"):
                 try:
                     if not is_skincare_query(client, user_message):
@@ -666,7 +673,6 @@ with tab_app:
                             user_input=user_message,
                             image_path=image_path,
                         )
-                        # Image sanity check
                         if image_path and result.get("profile", {}) and not result["profile"].get("image_observations"):
                             result.setdefault("routine", {}).setdefault("notes", []).insert(
                                 0, "No skin conditions could be detected from the uploaded photo — please ensure it shows your face clearly in good lighting."
@@ -677,3 +683,4 @@ with tab_app:
 
             st.markdown(response_text, unsafe_allow_html=True)
             st.session_state.messages.append({"role": "assistant", "content": response_text})
+
