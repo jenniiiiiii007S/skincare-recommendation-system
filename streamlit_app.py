@@ -324,11 +324,24 @@ def format_routine_html(result):
 
     return "\n".join(parts) if parts else "<p>Could not generate a routine. Try rephrasing.</p>"
 
+SKINCARE_KEYWORDS = {
+    "skin", "skincare", "acne", "oily", "dry", "combination", "sensitive",
+    "normal", "moisturizer", "cleanser", "serum", "sunscreen", "spf",
+    "routine", "pore", "redness", "wrinkle", "allergy", "allergic",
+    "fragrance", "retinol", "budget", "products", "hydration", "dark spot",
+}
 
 def is_skincare_query(client, user_input: str) -> bool:
+    # Fast keyword check first — avoids Gemini call for obvious cases
+    lower = user_input.lower()
+    if any(kw in lower for kw in SKINCARE_KEYWORDS):
+        return True
+    # Fall back to Gemini for ambiguous cases
     prompt = (
-        'Is this message asking for skincare advice, a skincare routine, '
-        'skin concerns, or product recommendations? Reply ONLY "yes" or "no".\n\n'
+        'Is this message related to skincare, skin type, skin concerns, '
+        'skincare products, or building a skincare routine? This includes '
+        'descriptions of skin conditions, budget constraints, or allergy info. '
+        'Reply ONLY "yes" or "no".\n\n'
         f'Message: "{user_input}"'
     )
     try:
