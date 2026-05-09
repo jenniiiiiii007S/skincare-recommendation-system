@@ -11,7 +11,7 @@ from data_loader import load_and_clean_data, build_vector_database
 from pipeline import full_pipeline
 
 st.set_page_config(
-    page_title="SkinAgent — Personalized Facial Skincare AI",
+    page_title="Facial Skincare Routine Assistant",
     page_icon="🌿",
     layout="centered",
     initial_sidebar_state="collapsed",
@@ -24,7 +24,6 @@ st.markdown("""
 
 :root {
   --cream:         #faf8f4;
-  --cream-dark:    #f2ede4;
   --sage:          #4a7c59;
   --sage-light:    #eaf2ec;
   --sand:          #b89a72;
@@ -35,22 +34,18 @@ st.markdown("""
   --morning:       #c47a20;
   --morning-bg:    #fdf4e7;
   --evening:       #5b4d8a;
-  --evening-bg:    #f1eef8;
   --border:        #e8e2d8;
   --white:         #ffffff;
 }
 
-/* ── Base ─────────────────────────────────── */
 html, body, [data-testid="stAppViewContainer"] {
   background-color: var(--cream) !important;
   font-family: 'DM Sans', sans-serif !important;
   color: var(--text) !important;
 }
 [data-testid="stHeader"]  { background: transparent !important; }
-[data-testid="stSidebar"] { display: none !important; }
 [data-testid="stDecoration"] { display: none !important; }
 
-/* ── Tabs ─────────────────────────────────── */
 [data-testid="stTabs"] [role="tablist"] {
   border-bottom: 2px solid var(--border) !important;
   gap: 0.25rem;
@@ -69,7 +64,6 @@ html, body, [data-testid="stAppViewContainer"] {
   background: var(--sage-light) !important;
 }
 
-/* ── Chat messages ────────────────────────── */
 [data-testid="stChatMessage"] {
   background: transparent !important;
   border: none !important;
@@ -84,7 +78,6 @@ html, body, [data-testid="stAppViewContainer"] {
   color: var(--text) !important;
 }
 
-/* ── Buttons ──────────────────────────────── */
 .stButton > button {
   font-family: 'DM Sans', sans-serif !important;
   font-weight: 500 !important;
@@ -94,54 +87,18 @@ html, body, [data-testid="stAppViewContainer"] {
   color: var(--text-mid) !important;
   border-radius: 8px !important;
   padding: 0.3rem 0.8rem !important;
-  transition: all 0.15s ease !important;
 }
 .stButton > button:hover {
   border-color: var(--sage) !important;
   color: var(--sage) !important;
 }
 
-/* ── File uploader ────────────────────────── */
 [data-testid="stFileUploader"] > div {
   background: var(--sand-light) !important;
   border: 1.5px dashed var(--sand) !important;
   border-radius: 10px !important;
   padding: 0.5rem !important;
 }
-[data-testid="stFileUploader"] label,
-[data-testid="stFileUploader"] small {
-  font-family: 'DM Sans', sans-serif !important;
-  font-size: 0.82rem !important;
-  color: var(--text-mid) !important;
-}
-
-/* ── Expander ─────────────────────────────── */
-[data-testid="stExpander"] {
-  background: var(--sand-light) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 10px !important;
-}
-[data-testid="stExpander"] summary {
-  font-family: 'DM Sans', sans-serif !important;
-  font-size: 0.85rem !important;
-  font-weight: 500 !important;
-  color: var(--text-mid) !important;
-}
-
-/* ── Routine cards ────────────────────────── */
-.routine-section {
-  margin: 1.4rem 0 0.8rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 1.5px solid var(--border);
-}
-.section-name {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.45rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-}
-.section-name.morning { color: var(--morning); }
-.section-name.evening { color: var(--evening); }
 
 .r-card {
   background: var(--white);
@@ -153,219 +110,63 @@ html, body, [data-testid="stAppViewContainer"] {
 }
 .r-card.morning { border-left-color: var(--morning); }
 .r-card.evening { border-left-color: var(--evening); }
-
-.r-type {
-  font-size: 0.68rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-light);
-  margin-bottom: 0.2rem;
-}
-.r-name {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1.3;
-}
-.r-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 0.25rem;
-}
+.r-type { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-light); margin-bottom: 0.2rem; }
+.r-name { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 600; color: var(--text); line-height: 1.3; }
+.r-meta { display: flex; align-items: center; gap: 6px; margin-top: 0.25rem; }
 .r-brand { font-size: 0.78rem; color: var(--text-light); }
-.r-price {
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: var(--sand-light);
-  color: var(--sand);
-  padding: 1px 8px;
-  border-radius: 20px;
-}
-.r-why {
-  font-size: 0.82rem;
-  color: var(--text-mid);
-  line-height: 1.6;
-  margin-top: 0.55rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--border);
-}
+.r-price { font-size: 0.75rem; font-weight: 600; background: var(--sand-light); color: var(--sand); padding: 1px 8px; border-radius: 20px; }
+.r-why { font-size: 0.82rem; color: var(--text-mid); line-height: 1.6; margin-top: 0.55rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
 
-/* ── Profile chips ────────────────────────── */
-.profile-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0.5rem 0 0.8rem 0;
-}
-.chip {
-  font-size: 0.76rem;
-  font-weight: 500;
-  padding: 3px 11px;
-  border-radius: 20px;
-  background: var(--sage-light);
-  color: var(--sage);
-  border: 1px solid #c4dbc9;
-}
-.chip.allergy {
-  background: var(--morning-bg);
-  color: var(--morning);
-  border-color: #e8c48a;
-}
-.chip.budget {
-  background: var(--sand-light);
-  color: var(--sand);
-  border-color: #ddc9aa;
-}
+.routine-section { margin: 1.4rem 0 0.8rem 0; padding-bottom: 0.5rem; border-bottom: 1.5px solid var(--border); }
+.section-name { font-family: 'Cormorant Garamond', serif; font-size: 1.45rem; font-weight: 600; letter-spacing: 0.01em; }
+.section-name.morning { color: var(--morning); }
+.section-name.evening { color: var(--evening); }
 
-/* ── Image observation ────────────────────── */
-.img-obs {
-  background: var(--sand-light);
-  border-left: 3px solid var(--sand);
-  border-radius: 0 8px 8px 0;
-  padding: 0.6rem 0.9rem;
-  font-size: 0.84rem;
-  color: var(--text);
-  margin-bottom: 0.8rem;
-  line-height: 1.55;
-}
+.profile-strip { display: flex; flex-wrap: wrap; gap: 6px; margin: 0.5rem 0 0.8rem 0; }
+.chip { font-size: 0.76rem; font-weight: 500; padding: 3px 11px; border-radius: 20px; background: var(--sage-light); color: var(--sage); border: 1px solid #c4dbc9; }
+.chip.allergy { background: var(--morning-bg); color: var(--morning); border-color: #e8c48a; }
+.chip.budget { background: var(--sand-light); color: var(--sand); border-color: #ddc9aa; }
+
+.img-obs { background: var(--sand-light); border-left: 3px solid var(--sand); border-radius: 0 8px 8px 0; padding: 0.6rem 0.9rem; font-size: 0.84rem; color: var(--text); margin-bottom: 0.8rem; line-height: 1.55; }
 .img-obs strong { color: var(--sand); }
 
-/* ── Warnings / Notes ─────────────────────── */
-.block-card {
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
-  margin: 0.7rem 0;
-}
-.block-card.warn {
-  background: #fff8f0;
-  border: 1px solid #f0c080;
-}
-.block-card.note {
-  background: var(--sage-light);
-  border: 1px solid #c4dbc9;
-}
-.block-title {
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 0.4rem;
-}
+.block-card { border-radius: 10px; padding: 0.75rem 1rem; margin: 0.7rem 0; }
+.block-card.warn { background: #fff8f0; border: 1px solid #f0c080; }
+.block-card.note { background: var(--sage-light); border: 1px solid #c4dbc9; }
+.block-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.4rem; }
 .block-card.warn .block-title { color: var(--morning); }
 .block-card.note .block-title { color: var(--sage); }
-.block-card ul {
-  margin: 0;
-  padding-left: 1.1rem;
-}
-.block-card li {
-  font-size: 0.83rem;
-  color: var(--text);
-  line-height: 1.7;
-}
+.block-card ul { margin: 0; padding-left: 1.1rem; }
+.block-card li { font-size: 0.83rem; color: var(--text); line-height: 1.7; }
 
-/* ── About page ───────────────────────────── */
+.greeting-msg { font-size: 0.9rem; color: var(--text); line-height: 1.65; }
+.greeting-msg em { color: var(--sage); font-style: normal; }
+
 .hero-wrap { padding: 1.5rem 0 1rem 0; }
-.hero-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--sage);
-  margin-bottom: 0.4rem;
-}
-.hero-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 2.6rem;
-  font-weight: 600;
-  line-height: 1.15;
-  color: var(--text);
-  margin-bottom: 0.6rem;
-}
-.hero-sub {
-  font-size: 0.95rem;
-  color: var(--text-mid);
-  line-height: 1.65;
-  max-width: 560px;
-}
-.hero-team {
-  font-size: 0.78rem;
-  color: var(--text-light);
-  margin-top: 0.75rem;
-}
+.hero-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--sage); margin-bottom: 0.4rem; }
+.hero-title { font-family: 'Cormorant Garamond', serif; font-size: 2.6rem; font-weight: 600; line-height: 1.15; color: var(--text); margin-bottom: 0.6rem; }
+.hero-sub { font-size: 0.95rem; color: var(--text-mid); line-height: 1.65; max-width: 560px; }
+.hero-team { font-size: 0.78rem; color: var(--text-light); margin-top: 0.75rem; }
 .divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
-.about-h {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--text);
-  margin: 1.8rem 0 0.8rem 0;
-}
-.pipe-step {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 0.65rem 0;
-  border-bottom: 1px solid var(--border);
-}
+.about-h { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 600; color: var(--text); margin: 1.8rem 0 0.8rem 0; }
+.pipe-step { display: flex; gap: 12px; align-items: flex-start; padding: 0.65rem 0; border-bottom: 1px solid var(--border); }
 .pipe-step:last-child { border-bottom: none; }
-.pipe-num {
-  min-width: 26px;
-  height: 26px;
-  background: var(--sage);
-  color: white;
-  border-radius: 50%;
-  font-size: 0.75rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 2px;
-}
+.pipe-num { min-width: 26px; height: 26px; background: var(--sage); color: white; border-radius: 50%; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
 .pipe-name { font-weight: 600; font-size: 0.88rem; color: var(--text); }
 .pipe-desc { font-size: 0.8rem; color: var(--text-light); line-height: 1.5; margin-top: 2px; }
 .metrics-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin: 0.75rem 0; }
-.m-card {
-  flex: 1; min-width: 100px;
-  background: var(--white);
-  border: 1.5px solid var(--border);
-  border-radius: 12px;
-  padding: 0.9rem 0.75rem;
-  text-align: center;
-}
-.m-val {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.9rem;
-  font-weight: 600;
-  color: var(--sage);
-  line-height: 1;
-}
+.m-card { flex: 1; min-width: 100px; background: var(--white); border: 1.5px solid var(--border); border-radius: 12px; padding: 0.9rem 0.75rem; text-align: center; }
+.m-val { font-family: 'Cormorant Garamond', serif; font-size: 1.9rem; font-weight: 600; color: var(--sage); line-height: 1; }
 .m-lbl { font-size: 0.72rem; color: var(--text-light); margin-top: 4px; line-height: 1.4; }
 .feat-list { list-style: none; padding: 0; margin: 0.3rem 0; }
-.feat-list li {
-  font-size: 0.87rem;
-  color: var(--text);
-  padding: 0.32rem 0;
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
-  border-bottom: 1px solid var(--border);
-}
+.feat-list li { font-size: 0.87rem; color: var(--text); padding: 0.32rem 0; display: flex; gap: 8px; align-items: flex-start; border-bottom: 1px solid var(--border); }
 .feat-list li:last-child { border-bottom: none; }
-.feat-list li::before {
-  content: "✦";
-  color: var(--sage);
-  font-size: 0.55rem;
-  margin-top: 6px;
-  flex-shrink: 0;
-}
+.feat-list li::before { content: "✦"; color: var(--sage); font-size: 0.55rem; margin-top: 6px; flex-shrink: 0; }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ── Data / pipeline init ──────────────────────────────────────────────────────
+# ── Pipeline init ─────────────────────────────────────────────────────────────
 @st.cache_resource(show_spinner="Loading SkinAgent…")
 def init_pipeline():
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -383,8 +184,8 @@ client, product_collection, ingredient_collection = init_pipeline()
 INITIAL_MESSAGE = {
     "role": "assistant",
     "content": (
-        "Hi! Tell me about your facial skin — type, concerns, allergies, and budget. "
-        "You can also add a facial photo below for visual analysis.\n\n"
+        "Hi! Tell me about your skin — type, concerns, allergies, and budget. "
+        "You can also add a facial photo in the sidebar for visual analysis.\n\n"
         "*Examples:*\n"
         "- I have oily acne-prone skin and want a routine under $80\n"
         "- Dry sensitive skin, allergic to fragrance, drugstore budget\n"
@@ -392,10 +193,54 @@ INITIAL_MESSAGE = {
     ),
 }
 
+# ── Greeting detection ────────────────────────────────────────────────────────
+GREETING_PHRASES = {
+    "hi", "hello", "hey", "sup", "howdy", "greetings", "yo",
+    "how are you", "how are you?", "how are you doing", "how are you doing?",
+    "what's up", "whats up", "what up", "wassup",
+    "good morning", "good afternoon", "good evening", "good night",
+    "thanks", "thank you", "thank you!", "thanks!", "thx",
+    "ok", "okay", "ok!", "okay!", "k", "kk", "sounds good",
+    "great", "nice", "awesome", "cool", "perfect",
+    "yes", "no", "yeah", "nope", "yep", "nah",
+    "bye", "goodbye", "see you", "later", "ciao",
+}
+
+def is_greeting(text: str) -> bool:
+    normalized = text.lower().strip().rstrip("!?.,").strip()
+    return normalized in GREETING_PHRASES
+
+GREETING_RESPONSE = (
+    '<div class="greeting-msg">'
+    "Hi there! I'm SkinAgent — your personalized skincare assistant. 🌿<br><br>"
+    "Tell me about your skin type, concerns, allergies, or budget and I'll recommend "
+    "products from a database of 2,418 real products and build you a custom AM/PM routine. "
+    "You can also upload a facial photo in the sidebar for visual analysis!<br><br>"
+    '<em>Try: "I have dry sensitive skin, allergic to fragrance, under $100 budget"</em>'
+    "</div>"
+)
+
+
+# ── Conversation context ──────────────────────────────────────────────────────
+def build_combined_input(messages: list) -> str:
+    """Concatenate the last 3 skincare-relevant user messages as pipeline context.
+    
+    This lets the pipeline remember prior skin profile details when the user
+    sends follow-up queries like 'keep it under $100' or 'add retinol'.
+    """
+    relevant = [
+        msg["content"]
+        for msg in messages
+        if msg["role"] == "user" and not is_greeting(msg["content"])
+    ]
+    if not relevant:
+        return ""
+    # Use last 3 to avoid over-accumulation
+    return " ".join(relevant[-3:])
+
 
 # ── Routine HTML formatter ────────────────────────────────────────────────────
 def _e(text):
-    """HTML-escape text so Gemini backticks / asterisks render as plain text."""
     return html_lib.escape(str(text))
 
 
@@ -408,13 +253,11 @@ def format_routine_html(result):
     budget  = result.get("budget_profile", {}) or {}
     routine = result.get("routine", {}) or {}
 
-    # Image observation
     if profile.get("image_observations"):
         parts.append(
             f'<div class="img-obs"><strong>📸 From your photo —</strong> {_e(profile["image_observations"])}</div>'
         )
 
-    # Profile chips
     chips = []
     if profile.get("skin_type"):
         chips.append(f'<span class="chip">{_e(profile["skin_type"])} skin</span>')
@@ -429,7 +272,6 @@ def format_routine_html(result):
     if chips:
         parts.append('<div class="profile-strip">' + "".join(chips) + '</div>')
 
-    # Price lookup
     price_lookup = {}
     for p in result.get("retrieved_products", []):
         raw = str(p.get("price", ""))
@@ -442,7 +284,7 @@ def format_routine_html(result):
             name = _e(step.get("product_name", ""))
             brand = _e(step.get("brand", ""))
             ptype = _e(step.get("product_type", ""))
-            why = _e(step.get("why", ""))
+            why   = _e(step.get("why", ""))
             price = price_lookup.get(step.get("product_name", ""), "")
             price_html = f'<span class="r-price">{_e(price)}</span>' if price else ""
             why_html = f'<div class="r-why">{why}</div>' if why else ""
@@ -466,15 +308,11 @@ def format_routine_html(result):
 
     if routine.get("warnings"):
         items = "".join(f"<li>{_e(w)}</li>" for w in routine["warnings"])
-        parts.append(
-            f'<div class="block-card warn"><div class="block-title">⚠ Warnings</div><ul>{items}</ul></div>'
-        )
+        parts.append(f'<div class="block-card warn"><div class="block-title">⚠ Warnings</div><ul>{items}</ul></div>')
 
     if routine.get("notes"):
         items = "".join(f"<li>{_e(n)}</li>" for n in routine["notes"])
-        parts.append(
-            f'<div class="block-card note"><div class="block-title">💡 Notes</div><ul>{items}</ul></div>'
-        )
+        parts.append(f'<div class="block-card note"><div class="block-title">💡 Notes</div><ul>{items}</ul></div>')
 
     if budget.get("budget_fallbacks"):
         items = "".join(
@@ -482,11 +320,22 @@ def format_routine_html(result):
             f"(your limit was ${int(fb['user_limit'])})</li>"
             for fb in budget["budget_fallbacks"]
         )
-        parts.append(
-            f'<div class="block-card warn"><div class="block-title">💰 Budget Notice</div><ul>{items}</ul></div>'
-        )
+        parts.append(f'<div class="block-card warn"><div class="block-title">💰 Budget Notice</div><ul>{items}</ul></div>')
 
     return "\n".join(parts) if parts else "<p>Could not generate a routine. Try rephrasing.</p>"
+
+
+def is_skincare_query(client, user_input: str) -> bool:
+    prompt = (
+        'Is this message asking for skincare advice, a skincare routine, '
+        'skin concerns, or product recommendations? Reply ONLY "yes" or "no".\n\n'
+        f'Message: "{user_input}"'
+    )
+    try:
+        response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
+        return response.text.strip().lower().startswith("y")
+    except Exception:
+        return True
 
 
 def save_uploaded_file(uploaded_file):
@@ -495,21 +344,6 @@ def save_uploaded_file(uploaded_file):
     tmp.write(uploaded_file.getbuffer())
     tmp.close()
     return tmp.name
-
-def is_skincare_query(client, user_input):
-    """Returns True if the input is skincare-related."""
-    prompt = (
-        'Is this message asking for skincare advice, a skincare routine, '
-        'skin concerns, or product recommendations? Reply ONLY "yes" or "no".\n\n'
-        f'Message: "{user_input}"'
-    )
-    try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash", contents=prompt
-        )
-        return response.text.strip().lower().startswith("y")
-    except Exception:
-        return True  # fail open — if check errors, let the pipeline try
 
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -520,7 +354,7 @@ tab_about, tab_app = st.tabs(["🌿  About", "✨  Try It"])
 with tab_about:
     st.markdown("""
     <div class="hero-wrap">
-      <div class="hero-label">NYU DS-UA 301 · Group 12</div>
+      <div class="hero-label">NYU DS-UA 301 · Advanced Topics in Data Science · Group 12</div>
       <div class="hero-title">Personalized Skincare,<br>Powered by AI.</div>
       <div class="hero-sub">
         SkinAgent is a multimodal, retrieval-augmented multi-agent system that builds
@@ -536,38 +370,23 @@ with tab_about:
     <div>
       <div class="pipe-step">
         <div class="pipe-num">1</div>
-        <div>
-          <div class="pipe-name">Skin Profile Agent</div>
-          <div class="pipe-desc">Parses your text description and optional facial photo into a structured skin profile using Gemini 2.5 Flash vision.</div>
-        </div>
+        <div><div class="pipe-name">Skin Profile Agent</div><div class="pipe-desc">Parses your text description and optional facial photo into a structured skin profile using Gemini 2.5 Flash vision.</div></div>
       </div>
       <div class="pipe-step">
         <div class="pipe-num">2</div>
-        <div>
-          <div class="pipe-name">Product Retrieval Agent</div>
-          <div class="pipe-desc">Searches a ChromaDB vector database of 2,418 real products (Sephora + LookFantastic) using embedding similarity, filtered by your skin type.</div>
-        </div>
+        <div><div class="pipe-name">Product Retrieval Agent</div><div class="pipe-desc">Searches a ChromaDB vector database of 2,418 real products (Sephora + LookFantastic) using embedding similarity, filtered by your skin type.</div></div>
       </div>
       <div class="pipe-step">
         <div class="pipe-num">3</div>
-        <div>
-          <div class="pipe-name">Budget Agent</div>
-          <div class="pipe-desc">Extracts your price constraints and filters retrieved products by overall limit, per-category limits, or budget tier.</div>
-        </div>
+        <div><div class="pipe-name">Budget Agent</div><div class="pipe-desc">Extracts your price constraints and filters retrieved products by overall limit, per-category limits, or budget tier.</div></div>
       </div>
       <div class="pipe-step">
         <div class="pipe-num">4</div>
-        <div>
-          <div class="pipe-name">Conflict Checker Agent</div>
-          <div class="pipe-desc">Detects harmful ingredient combinations via hardcoded clinical rules and RAG-based Gemini reasoning. Flags allergens using synonym mapping (e.g. "fragrance" → parfum, limonene, linalool…).</div>
-        </div>
+        <div><div class="pipe-name">Conflict Checker Agent</div><div class="pipe-desc">Detects harmful ingredient combinations via hardcoded clinical rules and RAG-based Gemini reasoning. Flags allergens using synonym mapping.</div></div>
       </div>
       <div class="pipe-step">
         <div class="pipe-num">5</div>
-        <div>
-          <div class="pipe-name">Routine Builder Agent</div>
-          <div class="pipe-desc">Assembles a structured AM/PM routine using Gemini 2.5 Flash, separating conflicting ingredients across morning and evening and respecting your budget.</div>
-        </div>
+        <div><div class="pipe-name">Routine Builder Agent</div><div class="pipe-desc">Assembles a structured AM/PM routine using Gemini 2.5 Flash, separating conflicting ingredients across morning and evening.</div></div>
       </div>
     </div>
 
@@ -589,32 +408,47 @@ with tab_about:
       <li>Allergen synonym mapping covers parabens, sulfates, fragrance, alcohol, silicones, and more</li>
       <li>Budget-aware filtering with per-category price limits and fallback handling</li>
       <li>Fitzpatrick fairness evaluation: 100% allergy accuracy consistency across skin tones</li>
-      <li>Baseline comparison: pipeline 3.83/5 vs. raw Gemini 3.50/5 across 6 test cases</li>
     </ul>
-    <div style="height: 2rem;"></div>
+    <div style="height:2rem"></div>
     """, unsafe_allow_html=True)
 
 
 # ── Try It tab ────────────────────────────────────────────────────────────────
 with tab_app:
-    # Init session state
     if "messages" not in st.session_state:
         st.session_state.messages = [INITIAL_MESSAGE]
 
-    # Header row
-    col_title, col_reset = st.columns([5, 1])
-    with col_title:
+    # ── Sidebar: photo upload + reset ────────────────────────────────────────
+    with st.sidebar:
         st.markdown(
-            '<p style="font-family:\'Cormorant Garamond\',serif;font-size:1.3rem;'
-            'font-weight:600;color:#4a7c59;margin:0.5rem 0 0.25rem 0;">SkinAgent</p>',
+            '<p style="font-family:\'Cormorant Garamond\',serif;font-size:1.1rem;'
+            'font-weight:600;color:#4a7c59;margin:0.5rem 0 0.75rem 0;">📷 Add a photo</p>',
             unsafe_allow_html=True,
         )
-    with col_reset:
-        if st.button("↺ Reset"):
+        uploaded = st.file_uploader(
+            "Upload a clear photo of your face",
+            type=["png", "jpg", "jpeg", "webp"],
+            label_visibility="collapsed",
+        )
+        if uploaded:
+            st.image(uploaded, width=200)
+        st.caption("Photos are processed by Google Gemini and not stored by this app.")
+        st.caption("This tool is for educational purposes and is not medical advice.")
+
+        st.divider()
+
+        if st.button("🔄 Start over", use_container_width=True):
             st.session_state.messages = [INITIAL_MESSAGE]
             st.rerun()
 
-    # Chat history
+    # ── Header row ────────────────────────────────────────────────────────────
+    st.markdown(
+        '<p style="font-family:\'Cormorant Garamond\',serif;font-size:1.3rem;'
+        'font-weight:600;color:#4a7c59;margin:0.5rem 0 0.25rem 0;">SkinAgent</p>',
+        unsafe_allow_html=True,
+    )
+
+    # ── Chat history ──────────────────────────────────────────────────────────
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             if msg.get("image_path"):
@@ -624,63 +458,67 @@ with tab_app:
                     pass
             st.markdown(msg["content"], unsafe_allow_html=True)
 
-    # Inline image uploader
-    with st.expander("📷  Add a photo of your skin (optional)"):
-        uploaded = st.file_uploader(
-            "Upload a clear photo of your face",
-            type=["png", "jpg", "jpeg", "webp"],
-            label_visibility="collapsed",
-        )
-        if uploaded:
-            st.image(uploaded, width=180)
-        st.caption("Photos are processed by Google Gemini and not stored by this app.")
-
-    # Chat input
+    # ── Chat input (fixed at bottom by Streamlit) ─────────────────────────────
     user_message = st.chat_input("Describe your skin…")
 
     if user_message and user_message.strip():
         image_path = save_uploaded_file(uploaded) if uploaded is not None else None
 
+        # Append user message to state
         st.session_state.messages.append({
             "role": "user",
             "content": user_message,
             "image_path": image_path,
         })
-        with st.chat_message("user"):
-            if image_path:
-                try:
-                    st.image(image_path, width=200)
-                except Exception:
-                    pass
-            st.markdown(user_message)
 
-        with st.chat_message("assistant"):
-            with st.spinner("Building your routine…"):
-                try:
-                    if not is_skincare_query(client, user_message):
-                        response_text = (
-                            '<div class="block-card warn">'
-                            '<div class="block-title">Out of scope</div>'
-                            '<p style="font-size:0.85rem;color:var(--text);margin:0.3rem 0 0 0">'
-                            "I'm specialized in skincare routines and product recommendations. "
-                            "Try describing your skin type, concerns, allergies, or budget — for example: "
-                            "<em>\"I have dry sensitive skin and want a gentle routine under $60.\"</em>"
-                            "</p></div>"
+        # Compute response — spinner shows during processing
+        with st.spinner("Building your routine…"):
+            try:
+                if is_greeting(user_message):
+                    # Friendly redirect for greetings
+                    response_text = GREETING_RESPONSE
+
+                elif not is_skincare_query(client, user_message):
+                    # Out-of-scope warning
+                    response_text = (
+                        '<div class="block-card warn">'
+                        '<div class="block-title">Out of scope</div>'
+                        '<p style="font-size:0.85rem;color:var(--text);margin:0.3rem 0 0 0">'
+                        "I'm specialized in skincare routines and product recommendations. "
+                        "Try describing your skin type, concerns, allergies, or budget — for example: "
+                        "<em>\"I have dry sensitive skin and want a gentle routine under $60.\"</em>"
+                        "</p></div>"
+                    )
+
+                else:
+                    # Build combined input from conversation history for memory
+                    combined = build_combined_input(st.session_state.messages)
+                    pipeline_input = combined if combined else user_message
+
+                    result = full_pipeline(
+                        client, product_collection, ingredient_collection,
+                        user_input=pipeline_input,
+                        image_path=image_path,
+                    )
+
+                    # Image sanity check
+                    if (image_path
+                            and result.get("profile", {})
+                            and not result["profile"].get("image_observations")):
+                        result.setdefault("routine", {}).setdefault("notes", []).insert(
+                            0, "No skin conditions could be detected from the uploaded photo — "
+                               "please ensure it shows your face clearly in good lighting."
                         )
-                    else:
-                        result = full_pipeline(
-                            client, product_collection, ingredient_collection,
-                            user_input=user_message,
-                            image_path=image_path,
-                        )
-                        if image_path and result.get("profile", {}) and not result["profile"].get("image_observations"):
-                            result.setdefault("routine", {}).setdefault("notes", []).insert(
-                                0, "No skin conditions could be detected from the uploaded photo — please ensure it shows your face clearly in good lighting."
-                            )
-                        response_text = format_routine_html(result)
-                except Exception as e:
-                    response_text = f"<p style='color:#c0392b'>Something went wrong: {_e(str(e))}</p>"
 
-            st.markdown(response_text, unsafe_allow_html=True)
-            st.session_state.messages.append({"role": "assistant", "content": response_text})
+                    response_text = format_routine_html(result)
 
+            except Exception as e:
+                response_text = (
+                    f"<p style='color:#c0392b'>Something went wrong: {_e(str(e))}</p>"
+                )
+
+        # Append response to state
+        st.session_state.messages.append({"role": "assistant", "content": response_text})
+
+        # Rerun so all messages render above the input in the correct order
+        st.rerun()
