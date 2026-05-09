@@ -406,8 +406,14 @@ def check_product_compatibility(client, product_collection, user_message: str, u
     not_found = True
     if results["ids"][0]:
         returned_name = results["metadatas"][0][0]["name"].lower()
-        query_words = set(product_name.lower().split()) - {"and", "the", "a", "for", "of", "in", "with", "is"}
-        returned_words = set(returned_name.split())
+        GENERIC_PRODUCT_WORDS = {
+            "and", "the", "a", "for", "of", "in", "with", "is",
+            "mask", "cream", "serum", "oil", "gel", "lotion", "toner",
+            "cleanser", "moisturizer", "balm", "mist", "spray", "essence",
+            "treatment", "solution", "spf", "care", "deep", "real", "pure",
+        }
+        query_words = set(product_name.lower().split()) - GENERIC_PRODUCT_WORDS
+        returned_words = set(returned_name.split()) - GENERIC_PRODUCT_WORDS
         not_found = len(query_words & returned_words) == 0
         
     # Product not in database — fall back to Gemini general knowledge
