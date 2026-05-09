@@ -402,6 +402,14 @@ def check_product_compatibility(client, product_collection, user_message: str, u
 
     results = product_collection.query(query_texts=[product_name], n_results=1)
 
+    # Always returns a result — verify it's actually relevant
+    not_found = True
+    if results["ids"][0]:
+        returned_name = results["metadatas"][0][0]["name"].lower()
+        query_words = set(product_name.lower().split()) - {"and", "the", "a", "for", "of", "in", "with", "is"}
+        returned_words = set(returned_name.split())
+        not_found = len(query_words & returned_words) == 0
+        
     # Product not in database — fall back to Gemini general knowledge
     if not results["ids"][0]:
         fallback_prompt = (
