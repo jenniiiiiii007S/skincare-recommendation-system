@@ -366,6 +366,118 @@ def save_uploaded_file(uploaded_file):
     tmp.close()
     return tmp.name
 
+# ──Product check ──────────────────────────────────────────────────────────────────────
+PRODUCT_QUERY_HINTS = {"is ", "should i use", "can i use", "what about", "good for", "work for", "this product"}
+
+def might_be_product_query(text: str) -> bool:
+    return any(hint in text.lower() for hint in PRODUCT_QUERY_HINTS)
+
+ALLERGEN_SYNONYMS_SIMPLE = {
+    "parabens":      ["methylparaben", "ethylparaben", "propylparaben", "butylparaben"],
+    "sulfates":      ["sodium lauryl sulfate", "sodium laureth sulfate", "sls", "sles"],
+    "fragrance":     ["fragrance", "parfum", "perfume", "limonene", "linalool"],
+    "alcohol":       ["alcohol denat", "denatured alcohol", "ethanol", "sd alcohol"],
+    "silicones":     ["dimethicone", "cyclopentasiloxane", "cyclohexasiloxane"],
+    "essential oils":["tea tree oil", "lavender oil", "peppermint oil"],
+}
+
+def check_product_compatibility(client, product_collection, user_message: str, user_context: str):
+    # Extract product name + search DB
+    extract_prompt = (
+        'Does this message ask about a specific skincare product by name? '
+        'If yes, return ONLY the product name. If no, return "none".\n\n'
+        'Examples:\n'
+        '"is CeraVe Hydrating Cleanser good for oily skin?" → "CeraVe Hydrating Cleanser"\n'
+        '"should I use The Ordinary Niacinamide?" → "The Ordinary Niacinamide"\n'
+        '"recommend me a routine" → "none"\n\n'
+        f'Message: "{user_message}"'
+    )
+    try:
+        r = client.models.generate_content(model="gemini-2.5-flash", contents=extract_prompt)
+        product_name = r.text.strip()
+        if product_name.lower() in ("none", "no", ""):
+            return None  # not a product query
+    except Exception:
+        return None
+
+    results = product_collection.query(query_texts=[product_name], n_results=1)
+
+    # Product not in database — fall back to Gemini general knowledge
+    if not results["ids"][0]:
+        fallback_prompt = (
+            f'User context: "{user_context[:400]}"\n'
+            f'They are asking about: "{product_name}"\n'
+            f'Give a 2-sentence assessment of whether this product is likely suitable. '
+            f'Note it is based on general knowledge, not a product database.'
+        )
+        try:
+            fb = client.models.generate_content(model="gemini-2.5-flash", contents=fallback_prompt)
+            note = fb.text.strip()
+        except Exception:
+            note = "Unable to assess this product."
+        return (
+            f'<div class="block-card note">'
+            f'<div class="block-title">📦 Product Check — Not in our database</div>'
+            f'<p style="font-size:0.85rem;color:var(--text);margin:0.3rem 0 0.4rem 0">'
+            f'<strong>{_e(product_name)}</strong> is not in our 2,418-product database — '
+            f'this assessment is based on Gemini\'s general knowledge.</p>'
+            f'<p style="font-size:0.85rem;color:var(--text-mid);margin:0">{_e(note)}</p>'
+            f'</div>'
+        )
+
+    meta = results["metadatas"][0][0]
+    doc  = results["documents"][0][0]
+
+    # Allergen check
+    allergen_hits = []
+    doc_lower = doc.lower()
+    for allergen, synonyms in ALLERGEN_SYNONYMS_SIMPLE.items():
+        if allergen in user_context.lower() or any(s in user_context.lower() for s in synonyms):
+            if any(s in doc_lower for s in synonyms + [allergen]):
+                allergen_hits.append(allergen)
+
+    # Single Gemini call for assessment
+    assess_prompt = (
+        f'User skin context: "{user_context[:400]}"\n'
+        f'Product: {meta["name"]} by {meta["brand"]}\n'
+        f'Suitable skin types (database): {meta.get("skin_types", "not specified")}\n'
+        f'Ingredients preview: {doc[:400]}\n\n'
+        f'In 2 sentences: is this product suitable for this user? Be direct and specific.'
+    )
+    try:
+        ar = client.models.generate_content(model="gemini-2.5-flash", contents=assess_prompt)
+        assessment = ar.text.strip()
+    except Exception:
+        assessment = "Unable to generate assessment."
+
+    raw_price = str(meta.get("price", ""))
+    price_clean = raw_price.rstrip("0").rstrip(".") if "." in raw_price else raw_price
+    show_price = "" if price_clean.lower() in ("nan", "none", "") else price_clean
+    price_html = f'<span class="r-price">{_e(show_price)}</span>' if show_price else ""
+
+    allergen_html = ""
+    if allergen_hits:
+        allergen_html = (
+            f'<div class="block-card warn" style="margin-top:0.6rem">'
+            f'<div class="block-title">⚠ Allergen Warning</div>'
+            f'<p style="font-size:0.85rem;color:var(--text);margin:0.3rem 0 0 0">'
+            f'This product may contain allergens you\'ve mentioned: '
+            f'{", ".join(_e(a) for a in allergen_hits)}</p>'
+            f'</div>'
+        )
+
+    return (
+        f'<div style="font-size:0.72rem;font-weight:600;text-transform:uppercase;'
+        f'letter-spacing:0.1em;color:var(--text-light);margin-bottom:0.4rem">📦 Product Check</div>'
+        f'<div class="r-card morning">'
+        f'<div class="r-name">{_e(meta["name"])}</div>'
+        f'<div class="r-meta"><span class="r-brand">{_e(meta["brand"])}</span>{price_html}</div>'
+        f'<div class="r-why">{_e(assessment)}</div>'
+        f'</div>'
+        f'{allergen_html}'
+    )
+
+
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 tab_about, tab_app = st.tabs(["🌿  About", "✨  Try It"])
@@ -503,7 +615,17 @@ with tab_app:
                     combined = build_combined_input(st.session_state.messages)
                     pipeline_input = combined if combined else user_message
 
-                    if not is_skincare_query(client, pipeline_input):
+                    # Check for product inquiry first
+                    product_result = None
+                    if might_be_product_query(user_message):
+                        product_result = check_product_compatibility(
+                            client, product_collection, user_message, pipeline_input
+                        )
+
+                    if product_result is not None:
+                        response_text = product_result
+
+                    elif not is_skincare_query(client, pipeline_input):
                         response_text = (
                             '<div class="block-card warn">'
                             '<div class="block-title">Out of scope</div>'
