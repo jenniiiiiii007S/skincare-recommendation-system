@@ -26,8 +26,10 @@ skincare routine recommendations. The system accepts both text descriptions and 
 │   └── routine_builder.py               # Agent 5: routine assembly
 ├── pipeline.py                          # End-to-end pipeline chaining all agents
 ├── data_loader.py                       # Data cleaning, merging, ChromaDB indexing
-├── requirements.txt                     # Python dependencies for deployment
 ├── streamlit_app.py                     # Interactive Streamlit frontend
+├── requirements.txt                     # Python dependencies for deployment
+├── runtime.txt                          # Deployment runtime configuration
+├── .gitignore
 ├── data/
 │   ├── cosmetics.csv                    
 │   ├── ingredientsList.csv
