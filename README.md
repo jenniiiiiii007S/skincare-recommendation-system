@@ -55,8 +55,7 @@ Note:
 - To make changes, edit `.py` files directly in GitHub and re-run `notebooks/demo.ipynb`, which will pull latest version.
 
 ## Datasets
-The following datasets are required and should be placed in your Google Drive at  
-`/content/drive/MyDrive/skincare_project/data/`:
+The three product and ingredient datasets (cosmetics.csv, ingredientsList.csv, skincare_products_clean.csv) are included in the data/ folder of this repository and do not need to be downloaded separately. The image dataset listed below is not included due to size constraints and must be downloaded manually and placed in your Google Drive at /content/drive/MyDrive/skincare_project/data/.
 
 | Dataset | Source |
 |---|---|
