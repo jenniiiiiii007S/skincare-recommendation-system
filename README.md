@@ -57,12 +57,12 @@ Note:
 ## Datasets
 The three product and ingredient datasets (cosmetics.csv, ingredientsList.csv, skincare_products_clean.csv) are included in the data/ folder of this repository and do not need to be downloaded separately. The image dataset listed below is not included due to size constraints and must be downloaded manually and placed in your Google Drive at /content/drive/MyDrive/skincare_project/data/.
 
-| Dataset | Source |
-|---|---|
-| Skincare Products Clean | [Kaggle](https://www.kaggle.com/datasets/eward96/skincare-products-clean-dataset) |
-| Cosmetics (Sephora) | [Kaggle](https://www.kaggle.com/datasets/kingabzpro/cosmetics-datasets) |
-| INCI Ingredient List | [Kaggle](https://www.kaggle.com/datasets/amaboh/skin-care-product-ingredients-inci-list) |
-| Skin Disease Classification | [Kaggle](https://www.kaggle.com/datasets/trainingdatapro/skin-defects-acne-redness-and-bags-under-the-eyes) |
+| Dataset | Source | Included in repo |
+|---|---|---|
+| Skincare Products Clean | [Kaggle](https://www.kaggle.com/datasets/eward96/skincare-products-clean-dataset) | ✅ Yes |
+| Cosmetics (Sephora) | [Kaggle](https://www.kaggle.com/datasets/kingabzpro/cosmetics-datasets) | ✅ Yes |
+| INCI Ingredient List | [Kaggle](https://www.kaggle.com/datasets/amaboh/skin-care-product-ingredients-inci-list) | ✅ Yes |
+| Skin Disease Classification | [Kaggle](https://www.kaggle.com/datasets/trainingdatapro/skin-defects-acne-redness-and-bags-under-the-eyes) | ⬇️ Download required |
 
 Image datasets are not included in this repository due to size constraints.
 
