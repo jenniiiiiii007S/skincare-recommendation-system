@@ -85,17 +85,26 @@ Image datasets are not included in this repository due to size constraints.
 - Gemini API key with billing enabled (Paid 1 tier)
 - Python dependencies listed in `requirements.txt`
 
+
 ## Interactive Streamlit App
-The project includes a Streamlit frontend (`streamlit_app.py`) that allows users to interact with the system through text input and optional facial image upload.
+
+The deployed app is available at:
+https://skincare-recommendation-system-tys3sc3nghy9ybioypataf.streamlit.app/
+
+### What you can do
+- Describe your skin type, concerns, allergies, and budget in plain language
+  (e.g. "I have oily acne-prone skin, allergic to fragrance, budget under $80")
+- Optionally upload a facial photo for visual skin condition analysis
+- Receive a structured AM/PM skincare routine with real products from our database
+- See allergy warnings and ingredient conflict flags directly in the interface
+- Ask follow-up questions (e.g. adjust budget, request a different routine type)
+  without restarting — the app retains context across your last 3 messages
+- Check whether a specific product is compatible with your skin profile
 
 ### Run locally
-
 ```bash
 pip install -r requirements.txt
 export GEMINI_API_KEY="your_key_here"
 python3 -m streamlit run streamlit_app.py
 ```
-
-## Public Interactive Demo
-Streamlit app: https://skincare-recommendation-system-tys3sc3nghy9ybioypataf.streamlit.app/
 
