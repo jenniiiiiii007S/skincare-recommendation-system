@@ -214,7 +214,7 @@ def full_pipeline(client, product_collection, ingredient_collection, user_input,
             deduped_products.append(p)
     all_products = deduped_products
     
-    # Agent 3: Strict budget filter (no over-budget fallback)
+    # Agent 3: Strict budget filter ((falls back to cheapest available if no in-budget option exists)
     all_products = filter_products_by_budget(all_products, budget_profile)
 
     # Surface omitted categories so routine_builder can warn the user
