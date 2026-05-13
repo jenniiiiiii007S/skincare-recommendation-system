@@ -64,8 +64,6 @@ The three product and ingredient datasets (cosmetics.csv, ingredientsList.csv, s
 | INCI Ingredient List | [Kaggle](https://www.kaggle.com/datasets/amaboh/skin-care-product-ingredients-inci-list) | ✅ Yes |
 | Skin Disease Classification | [Kaggle](https://www.kaggle.com/datasets/trainingdatapro/skin-defects-acne-redness-and-bags-under-the-eyes) | ⬇️ Download required |
 
-Image datasets are not included in this repository due to size constraints.
-
 ## Evaluation Results (100 test cases)
 | Metric | Score |
 |---|---|
